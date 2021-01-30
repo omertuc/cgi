@@ -1,78 +1,101 @@
 extern crate gl;
 extern crate sdl2;
 
-use std::ffi::{CStr, CString};
+use std::path::Path;
 
-fn shader_from_source(source: &std::ffi::CStr,
-                      kind: gl::types::GLuint) -> Result<gl::types::GLuint, String> {
-    let id = unsafe { gl::CreateShader(kind) };
+use resources::Resources;
 
-    unsafe {
-        gl::ShaderSource(id, 1, &source.as_ptr(), std::ptr::null());
-        gl::CompileShader(id);
-    }
+pub mod resources;
 
-    let mut success: gl::types::GLint = 1;
-
-    unsafe {
-        gl::GetShaderiv(id, gl::COMPILE_STATUS, &mut success);
-    }
-
-    if success == 0 {}
-
-    Ok(id);
-
-    let mut len: gl::types::GLint = 0;
-
-    unsafe {
-        gl::GetShaderiv(id, gl::INFO_LOG_LENGTH, &mut len);
-    }
-
-    let mut buffer: Vec<u8> = Vec::with_capacity(len as usize + 1);
-    buffer.extend([b' '].iter().cycle().take(len as usize));
-
-    let error: CString = unsafe { CString::from_vec_unchecked(buffer) };
-
-    unsafe {
-        gl::GetShaderInfoLog(
-            id,
-            len,
-            std::ptr::null_mut(),
-            error.as_ptr() as *mut gl::types::GLchar
-        );
-    }
-
-    return Err(error.to_string_lossy().into_owned());
-}
+pub mod render_gl;
 
 fn main() {
-    println!("Hello, worl!");
+    let res = Resources::from_relative_exe_path(Path::new("assets")).unwrap();
 
     let sdl = sdl2::init().unwrap();
-
     let video_subsystem = sdl.video().unwrap();
+
+    let gl_attr = video_subsystem.gl_attr();
+
+    gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
+    gl_attr.set_context_version(4, 6);
 
     let window = video_subsystem
         .window("Game", 900, 700)
         .opengl()
         .resizable()
-        .borderless()
         .build()
         .unwrap();
 
-    let gl_context = window.gl_create_context().unwrap();
-
-    let gl = gl::load_with(|s| video_subsystem.gl_get_proc_address(s)
+    let _gl_context = window.gl_create_context().unwrap();
+    let gl = gl::Gl::load_with(|s| video_subsystem.gl_get_proc_address(s)
         as *const std::os::raw::c_void);
 
-    let gl_attr = video_subsystem.gl_attr();
-    gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
-    gl_attr.set_context_version(4, 5);
+    let shader_program = render_gl::Program::from_res(
+        &gl, &res, "shaders/triangle",
+    ).unwrap();
+
+    let vertices: Vec<f32> = vec![
+        0.5, -0.5, 0.0, 1.0, 0.0, 0.0,
+        -0.5, -0.5, 0.0, 0.0, 1.0, 0.0,
+        0.0, 0.5, 0.0, 0.0, 0.0, 1.0,
+    ];
+
+    let mut vbo: gl::types::GLuint = 0;
+    unsafe {
+        gl.GenBuffers(1, &mut vbo);
+    }
 
     unsafe {
-        gl::Viewport(0, 0, 900, 700);
-        gl::ClearColor(0.3, 0.3, 0.5, 1.0);
+        gl.BindBuffer(gl::ARRAY_BUFFER, vbo);
+        gl.BufferData(
+            gl::ARRAY_BUFFER,
+            (vertices.len() * std::mem::size_of::<f32>()) as gl::types::GLsizeiptr,
+            vertices.as_ptr() as *const gl::types::GLvoid,
+            gl::STATIC_DRAW,
+        );
+        gl.BindBuffer(gl::ARRAY_BUFFER, 0);
     }
+
+    let mut vao: gl::types::GLuint = 0;
+    unsafe {
+        gl.GenVertexArrays(1, &mut vao);
+    }
+
+    unsafe {
+        gl.BindVertexArray(vao);
+        gl.BindBuffer(gl::ARRAY_BUFFER, vbo);
+
+        gl.EnableVertexAttribArray(0);
+        gl.VertexAttribPointer(
+            0,
+            3,
+            gl::FLOAT,
+            gl::FALSE,
+            (6 * std::mem::size_of::<f32>()) as gl::types::GLint,
+            std::ptr::null(),
+        );
+
+        gl.EnableVertexAttribArray(1);
+        gl.VertexAttribPointer(
+            1,
+            3,
+            gl::FLOAT,
+            gl::FALSE,
+            (6 * std::mem::size_of::<f32>()) as gl::types::GLint,
+            (3 * std::mem::size_of::<f32>()) as *const gl::types::GLvoid,
+        );
+
+        gl.BindBuffer(gl::ARRAY_BUFFER, 0);
+        gl.BindVertexArray(0);
+    }
+
+    unsafe {
+        gl.Viewport(0, 0, 900, 700);
+        gl.ClearColor(0.3, 0.3, 0.5, 1.0);
+    }
+
+    shader_program.set_used();
 
     let mut event_pump = sdl.event_pump().unwrap();
     'main: loop {
@@ -84,9 +107,20 @@ fn main() {
         }
 
         unsafe {
-            gl::Clear(gl::COLOR_BUFFER_BIT);
+            gl.Clear(gl::COLOR_BUFFER_BIT);
+        }
+
+        unsafe {
+            gl.BindVertexArray(vao);
+            gl.DrawArrays(
+                gl::TRIANGLES,
+                0,
+                3,
+            );
         }
 
         window.gl_swap_window()
     }
 }
+
+
