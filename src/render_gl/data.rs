@@ -1,4 +1,3 @@
-use gl::types::GLuint;
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug)]

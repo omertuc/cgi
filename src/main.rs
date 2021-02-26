@@ -1,33 +1,24 @@
-mod triangle;
-
 #[macro_use]
 extern crate failure;
-extern crate gl;
 #[macro_use]
 extern crate render_gl_derive;
-extern crate sdl2;
-extern crate vec_2_10_10_10;
 
 use std::path::Path;
 
-use render_gl::buffer;
-
 use failure::err_msg;
+use nalgebra as na;
 
-use render_gl::data;
 use resources::Resources;
 
-use crate::render_gl::data::f32_f32_f32;
-use crate::render_gl::buffer::BufferTypeArray;
-
-pub mod resources;
-
 pub mod render_gl;
+pub mod resources;
+mod triangle;
+mod debug;
 
 
 fn main() {
     if let Err(e) = run() {
-        println!("{}", failure_to_string(e));
+        println!("{}", debug::failure_to_string(e));
     }
 }
 
@@ -43,7 +34,7 @@ fn run() -> Result<(), failure::Error> {
     gl_attr.set_context_version(4, 6);
 
     let window = video_subsystem
-        .window("Game", 900, 700)
+        .window("Game", 100, 100)
         .opengl()
         .resizable()
         .build().map_err(err_msg)?;
@@ -52,16 +43,14 @@ fn run() -> Result<(), failure::Error> {
     let gl = gl::Gl::load_with(|s| video_subsystem.gl_get_proc_address(s)
         as *const std::os::raw::c_void);
 
-    let shader_program = render_gl::Program::from_res(
-        &gl, &res, "shaders/triangle",
-    )?;
+    let mut viewport = render_gl::Viewport::for_window(900, 700);
+    viewport.set_used(&gl);
 
+    let color_buffer = render_gl::ColorBuffer::from_color(
+        na::Vector3::new(0.3, 0.3, 0.5));
 
-    unsafe {
-        gl.Viewport(0, 0, 900, 700);
-        gl.ClearColor(0.3, 0.3, 0.5, 1.0);
-    }
-
+    color_buffer.set_used(&gl);
+    color_buffer.clear(&gl);
 
     let mut event_pump = sdl.event_pump().map_err(err_msg)?;
 
@@ -71,43 +60,22 @@ fn run() -> Result<(), failure::Error> {
         for event in event_pump.poll_iter() {
             match event {
                 sdl2::event::Event::Quit { .. } => break 'main,
+                sdl2::event::Event::Window {
+                    win_event: sdl2::event::WindowEvent::Resized(w, h),
+                    ..
+                } => {
+                    viewport.update_size(w, h);
+                    viewport.set_used(&gl);
+                }
                 _ => {}
             }
         }
 
-        unsafe {
-            gl.Clear(gl::COLOR_BUFFER_BIT);
-        }
-
+        color_buffer.clear(&gl);
         triangle.render(&gl);
 
         window.gl_swap_window()
     }
 
     Ok(())
-}
-
-pub fn failure_to_string(e: failure::Error) -> String {
-    use std::fmt::Write;
-
-    let mut result = String::new();
-
-    for (i, cause) in e.iter_chain().collect::<Vec<_>>().into_iter().rev().enumerate() {
-        if i > 0 {
-            let _ = writeln!(&mut result, "   Which caused the following issue:");
-        }
-        let _ = write!(&mut result, "{}", cause);
-        if let Some(backtrace) = cause.backtrace() {
-            let backtrace_str = format!("{}", backtrace);
-            if backtrace_str.len() > 0 {
-                let _ = writeln!(&mut result, " This happened at {}", backtrace);
-            } else {
-                let _ = writeln!(&mut result);
-            }
-        } else {
-            let _ = writeln!(&mut result);
-        }
-    }
-
-    result
 }

@@ -37,10 +37,10 @@ fn generate_vertex_attrib_pointer_calls(data: &syn::Data) -> proc_macro2::TokenS
         &syn::Data::Struct(ref s) => {
             s.fields.iter().map(generate_struct_field_vertex_attrib_pointer_call).collect()
         }
-        &syn::Data::Enum(ref s) => {
+        &syn::Data::Enum(ref _s) => {
             panic!("Enum vertex attrib pointers derivation unsupported")
         }
-        &syn::Data::Union(ref s) => {
+        &syn::Data::Union(ref _s) => {
             panic!("Union vertex attrib pointers derivation unsupported")
         }
     }
