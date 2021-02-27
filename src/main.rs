@@ -43,24 +43,34 @@ fn run() -> Result<(), failure::Error> {
     let gl = gl::Gl::load_with(|s| video_subsystem.gl_get_proc_address(s)
         as *const std::os::raw::c_void);
 
+    unsafe {
+        gl.Enable(gl::BLEND);
+        gl.BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+    }
+
     let mut viewport = render_gl::Viewport::for_window(900, 700);
     viewport.set_used(&gl);
 
     let color_buffer = render_gl::ColorBuffer::from_color(
-        na::Vector3::new(0.3, 0.3, 0.5));
+        na::Vector3::new(0.04, 0.05, 0.04));
 
     color_buffer.set_used(&gl);
     color_buffer.clear(&gl);
 
     let mut event_pump = sdl.event_pump().map_err(err_msg)?;
 
-    let triangle = triangle::Triangle::new(&res, &gl)?;
-    let triangle2 = triangle::Triangle::new(&res, &gl)?;
-    let triangle3 = triangle::Triangle::new(&res, &gl)?;
-    let triangle4 = triangle::Triangle::new(&res, &gl)?;
-    let triangle5 = triangle::Triangle::new(&res, &gl)?;
+    let triangle_draw = triangle::TrianglesDraw::new(&res, &gl)?;
 
-    let mut rot = 0.0f32;
+    let mut triangles = vec![];
+    let count = 100;
+    for triangle_index in 1..count {
+        triangles.push(triangle::Triangle::new(
+            (triangle_index as f32) * (std::f32::consts::TAU / count as f32))
+        );
+    }
+
+    let mut vis: isize = 0;
+    let mut up: isize = 1;
     'main: loop {
         for event in event_pump.poll_iter() {
             match event {
@@ -76,14 +86,21 @@ fn run() -> Result<(), failure::Error> {
             }
         }
 
-        rot += 0.01f32;
-
         color_buffer.clear(&gl);
-        triangle.set_angle(&gl, rot);
-        triangle2.set_angle(&gl, rot + 0.5f32);
-        triangle3.set_angle(&gl, rot + 1f32);
-        triangle4.set_angle(&gl, rot + 1.5f32);
-        triangle5.set_angle(&gl, rot + 2.5f32);
+
+        for mut triangle in &mut triangles {
+            triangle.add_angle(0.02f32)
+        }
+
+        triangle_draw.draw(&gl, triangles.iter().flat_map(triangle::Triangle::vertices).take(vis as usize).collect());
+
+        vis += up;
+
+        if vis == count {
+            up = -1;
+        } else if vis == 0 {
+            up = 1;
+        }
 
         window.gl_swap_window();
     }

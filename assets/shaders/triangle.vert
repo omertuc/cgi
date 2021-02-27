@@ -1,18 +1,18 @@
 #version 330 core
 
 layout (location = 0) in vec3 Position;
-layout (location = 1) in vec3 Color;
+layout (location = 1) in vec4 Color;
 layout (location = 2) in float rot;
 
 out VS_OUTPUT {
-    vec3 Color;
+    vec4 Color;
 } OUT;
 
 #define M_PI 3.1415926535897932384626433832795
 
 void main()
 {
-    OUT.Color = Color.xyz;
+    OUT.Color = Color;
 
     mat3 roll = mat3
     (
@@ -35,5 +35,5 @@ void main()
     0, sin(rot), cos(rot)
     );
 
-    gl_Position = vec4(roll * yaw * pitch * Position, 1.0);
+    gl_Position = vec4(roll * Position, 1.0);
 }

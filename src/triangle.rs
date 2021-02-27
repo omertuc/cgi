@@ -7,67 +7,82 @@ use crate::resources::Resources;
 #[derive(VertexAttribPointers)]
 #[derive(Copy, Clone, Debug)]
 #[repr(C, packed)]
-struct Vertex {
+pub struct Vertex {
     pos: data::f32_f32_f32,
     clr: data::u2_u10_u10_u10_rev_float,
     rot: data::f32_,
 }
 
-pub struct Triangle {
+pub struct TrianglesDraw {
     program: render_gl::Program,
     vbo: buffer::ArrayBuffer,
     vao: buffer::VertexArray,
 }
 
-impl Triangle {
-    pub fn new(res: &Resources, gl: &gl::Gl) -> Result<Triangle, failure::Error> {
+impl TrianglesDraw {
+    pub fn new(res: &Resources, gl: &gl::Gl) -> Result<TrianglesDraw, failure::Error> {
         let default_angle = std::f32::consts::PI;
         let program = render_gl::Program::from_res(gl, res, "shaders/triangle")?;
 
         let vbo = buffer::ArrayBuffer::new(&gl);
         let vao = buffer::VertexArray::new(&gl);
 
-        let triangle = Triangle {
+        vao.bind();
+        vbo.bind();
+        Vertex::vertex_attrib_pointers(&gl);
+        vbo.unbind();
+        vao.unbind();
+
+        let triangle = TrianglesDraw {
             program,
             vbo,
             vao,
         };
 
-        triangle.set_angle(&gl, default_angle);
-
         Ok(triangle)
     }
 
-    pub fn set_angle(&self, gl: &gl::Gl, angle: f32) {
-        let vertices: Vec<Vertex> = vec![
-            Vertex { pos: (0.5, -0.5, 0.0).into(), clr: (1.0, 0.0, 0.0, 1.0).into(), rot: angle.into() },
-            Vertex { pos: (-0.5, -0.5, 0.0).into(), clr: (0.0, 1.0, 0.0, 1.0).into(), rot: angle.into() },
-            Vertex { pos: (0.0, 0.5, 0.0).into(), clr: (0.0, 0.0, 1.0, 1.0).into(), rot: angle.into() },
-        ];
-
+    pub fn draw(&self, gl: &gl::Gl, vertices: Vec<Vertex>) {
         self.vbo.bind();
         self.vbo.dynamic_draw_data(&vertices);
-        self.vbo.unbind();
 
-        self.vao.bind();
-        self.vbo.bind();
-        Vertex::vertex_attrib_pointers(&gl);
-        self.vbo.unbind();
-        self.vao.unbind();
-
-        self.render(&gl);
-    }
-
-    pub fn render(&self, gl: &gl::Gl) {
         self.program.set_used();
         self.vao.bind();
-
         unsafe {
             gl.DrawArrays(
                 gl::TRIANGLES,
                 0,
-                3,
-            )
+                vertices.len() as i32,
+            );
         }
     }
+}
+
+pub struct Triangle {
+    angle: f32
+}
+
+impl Triangle {
+    pub fn new(angle: f32) -> Triangle {
+        Triangle {
+            angle
+        }
+    }
+
+    pub fn set_angle(&mut self, angle: f32) {
+        self.angle = angle
+    }
+
+    pub fn add_angle(&mut self, angle: f32) {
+        self.angle += angle
+    }
+
+    pub fn vertices(&self) -> Vec<Vertex> {
+    vec![
+        Vertex { pos: (0.5, -0.5, 0.0).into(), clr: (1.0, 0.0, 0.0, 0.2).into(), rot: self.angle.into() },
+        Vertex { pos: (-0.5, -0.5, 0.0).into(), clr: (0.0, 1.0, 0.0, 0.2).into(), rot: self.angle.into() },
+        Vertex { pos: (0.0, 0.5, 0.0).into(), clr: (0.0, 0.0, 1.0, 0.2).into(), rot: self.angle.into() },
+    ]
+    }
+
 }
