@@ -66,10 +66,12 @@ fn run() -> Result<(), failure::Error> {
 
     let triangle_draw = triangle::TrianglesDraw::new(&res, &gl)?;
 
-    let count = 3;
+    let triangle_count = 3;
 
-    let mut triangles: Vec<triangle::Triangle> = (0..count).into_iter().map(
-        |i| triangle::Triangle::new((i as f32) * (std::f32::consts::TAU / count as f32))
+    let mut triangles: Vec<triangle::Triangle> = (0..triangle_count).into_iter().map(
+        |triangle_index| (triangle_index as f32) * (std::f32::consts::TAU / triangle_count as f32)
+    ).map(
+        |angle| triangle::Triangle::new(angle)
     ).collect();
 
     'main: loop {
