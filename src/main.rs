@@ -33,15 +33,20 @@ fn run() -> Result<(), failure::Error> {
     gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
     gl_attr.set_context_version(4, 6);
 
-    let window = video_subsystem
-        .window("Game", 100, 100)
+    let mut window = video_subsystem
+        .window("Game", 2560, 1440)
         .opengl()
         .resizable()
         .build().map_err(err_msg)?;
 
     let _gl_context = window.gl_create_context().map_err(err_msg)?;
+
+    video_subsystem.gl_set_swap_interval(0);
+
     let gl = gl::Gl::load_with(|s| video_subsystem.gl_get_proc_address(s)
         as *const std::os::raw::c_void);
+
+    println!("{:#?}", video_subsystem.current_display_mode(0).unwrap());
 
     unsafe {
         gl.Enable(gl::BLEND);
@@ -62,15 +67,13 @@ fn run() -> Result<(), failure::Error> {
     let triangle_draw = triangle::TrianglesDraw::new(&res, &gl)?;
 
     let mut triangles = vec![];
-    let count = 100;
+    let count = 2000;
     for triangle_index in 1..count {
         triangles.push(triangle::Triangle::new(
             (triangle_index as f32) * (std::f32::consts::TAU / count as f32))
         );
     }
 
-    let mut vis: isize = 0;
-    let mut up: isize = 1;
     'main: loop {
         for event in event_pump.poll_iter() {
             match event {
@@ -89,18 +92,10 @@ fn run() -> Result<(), failure::Error> {
         color_buffer.clear(&gl);
 
         for mut triangle in &mut triangles {
-            triangle.add_angle(0.02f32)
+            triangle.add_angle(0.01f32)
         }
 
-        triangle_draw.draw(&gl, triangles.iter().flat_map(triangle::Triangle::vertices).take(vis as usize).collect());
-
-        vis += up;
-
-        if vis == count {
-            up = -1;
-        } else if vis == 0 {
-            up = 1;
-        }
+        triangle_draw.draw(&gl, triangles.iter().flat_map(triangle::Triangle::vertices).collect());
 
         window.gl_swap_window();
     }

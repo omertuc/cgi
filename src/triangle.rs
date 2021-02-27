@@ -79,9 +79,9 @@ impl Triangle {
 
     pub fn vertices(&self) -> Vec<Vertex> {
     vec![
-        Vertex { pos: (0.5, -0.5, 0.0).into(), clr: (1.0, 0.0, 0.0, 0.2).into(), rot: self.angle.into() },
-        Vertex { pos: (-0.5, -0.5, 0.0).into(), clr: (0.0, 1.0, 0.0, 0.2).into(), rot: self.angle.into() },
-        Vertex { pos: (0.0, 0.5, 0.0).into(), clr: (0.0, 0.0, 1.0, 0.2).into(), rot: self.angle.into() },
+        Vertex { pos: (0.5, -0.5, 0.0).into(), clr: (0.2, 0.2, 0.4, 0.3).into(), rot: self.angle.into() },
+        Vertex { pos: (-0.5, -0.5, 0.0).into(), clr: (0.1, 0.1, 0.3, 0.3).into(), rot: self.angle.into() },
+        Vertex { pos: (0.0, 0.5, 0.0).into(), clr: (0.3, 0.3, 0.5, 0.3).into(), rot: self.angle.into() },
     ]
     }
 
