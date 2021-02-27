@@ -41,7 +41,7 @@ fn run() -> Result<(), failure::Error> {
 
     let _gl_context = window.gl_create_context().map_err(err_msg)?;
 
-    video_subsystem.gl_set_swap_interval(0);
+    video_subsystem.gl_set_swap_interval(1);
 
     let gl = gl::Gl::load_with(|s| video_subsystem.gl_get_proc_address(s)
         as *const std::os::raw::c_void);
@@ -66,13 +66,11 @@ fn run() -> Result<(), failure::Error> {
 
     let triangle_draw = triangle::TrianglesDraw::new(&res, &gl)?;
 
-    let mut triangles = vec![];
-    let count = 2000;
-    for triangle_index in 1..count {
-        triangles.push(triangle::Triangle::new(
-            (triangle_index as f32) * (std::f32::consts::TAU / count as f32))
-        );
-    }
+    let count = 3;
+
+    let mut triangles: Vec<triangle::Triangle> = (0..count).into_iter().map(
+        |i| triangle::Triangle::new((i as f32) * (std::f32::consts::TAU / count as f32))
+    ).collect();
 
     'main: loop {
         for event in event_pump.poll_iter() {
@@ -91,10 +89,7 @@ fn run() -> Result<(), failure::Error> {
 
         color_buffer.clear(&gl);
 
-        for mut triangle in &mut triangles {
-            triangle.add_angle(0.01f32)
-        }
-
+        triangles.iter_mut().for_each(|t| t.add_angle(0.01f32));
         triangle_draw.draw(&gl, triangles.iter().flat_map(triangle::Triangle::vertices).collect());
 
         window.gl_swap_window();
