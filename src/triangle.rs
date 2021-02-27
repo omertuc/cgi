@@ -3,6 +3,7 @@ use gl;
 
 use crate::render_gl::{self, buffer, data};
 use crate::resources::Resources;
+use gl::types::GLfloat;
 
 #[derive(VertexAttribPointers)]
 #[derive(Copy, Clone, Debug)]
@@ -10,7 +11,6 @@ use crate::resources::Resources;
 pub struct Vertex {
     pos: data::f32_f32_f32,
     clr: data::u2_u10_u10_u10_rev_float,
-    rot: data::f32_,
 }
 
 pub struct TrianglesDraw {
@@ -42,11 +42,17 @@ impl TrianglesDraw {
         Ok(triangle)
     }
 
-    pub fn draw(&self, gl: &gl::Gl, vertices: Vec<Vertex>) {
+    pub fn draw(&self, gl: &gl::Gl, vertices: Vec<Vertex>, rot: f32) {
         self.vbo.bind();
         self.vbo.dynamic_draw_data(&vertices);
 
         self.program.set_used();
+        let cname = std::ffi::CString::new("rot".to_string()).unwrap();
+        unsafe {
+            let uniform_rot = gl.GetUniformLocation(self.program.id(), cname.as_ptr());
+            gl.Uniform1f(uniform_rot, rot as GLfloat)
+        }
+
         self.vao.bind();
         unsafe {
             gl.DrawArrays(
@@ -78,11 +84,10 @@ impl Triangle {
     }
 
     pub fn vertices(&self) -> Vec<Vertex> {
-    vec![
-        Vertex { pos: (0.5, -0.5, 0.0).into(), clr: (0.2, 0.2, 0.4, 0.3).into(), rot: self.angle.into() },
-        Vertex { pos: (-0.5, -0.5, 0.0).into(), clr: (0.1, 0.1, 0.3, 0.3).into(), rot: self.angle.into() },
-        Vertex { pos: (0.0, 0.5, 0.0).into(), clr: (0.3, 0.3, 0.5, 0.3).into(), rot: self.angle.into() },
-    ]
+        vec![
+            Vertex { pos: (0.5, -0.5, 0.0).into(), clr: (0.2, 0.2, 0.4, 0.3).into(), rot: self.angle.into() },
+            Vertex { pos: (-0.5, -0.5, 0.0).into(), clr: (0.1, 0.1, 0.3, 0.3).into(), rot: self.angle.into() },
+            Vertex { pos: (0.0, 0.5, 0.0).into(), clr: (0.3, 0.3, 0.5, 0.3).into(), rot: self.angle.into() },
+        ]
     }
-
 }
