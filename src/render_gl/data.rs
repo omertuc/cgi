@@ -1,4 +1,3 @@
-
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug)]
 #[repr(C, packed)]
@@ -68,6 +67,37 @@ impl u2_u10_u10_u10_rev_float {
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug)]
 #[repr(C, packed)]
+pub struct f32_ {
+    pub d0: f32,
+}
+
+impl f32_ {
+    pub fn new(d0: f32) -> f32_ {
+        f32_ { d0 }
+    }
+
+    pub unsafe fn vertex_attrib_pointer(gl: &gl::Gl, stride: usize, location: usize, offset: usize) {
+        gl.EnableVertexAttribArray(location as gl::types::GLuint);
+        gl.VertexAttribPointer(
+            location as gl::types::GLuint,
+            1,
+            gl::FLOAT,
+            gl::FALSE,
+            stride as gl::types::GLint,
+            offset as *const gl::types::GLvoid,
+        );
+    }
+}
+
+impl From<f32> for f32_ {
+    fn from(other: f32) -> Self {
+        f32_::new(other)
+    }
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Copy, Clone, Debug)]
+#[repr(C, packed)]
 pub struct i8_ {
     pub d0: i8,
 }
@@ -125,5 +155,62 @@ impl From<i8> for i8_float {
     /// Create this data type from i8
     fn from(other: i8) -> Self {
         i8_float::new(other)
+    }
+}
+
+#[allow(non_camel_case_types)]
+#[derive(Copy, Clone, Debug)]
+#[repr(C, packed)]
+pub struct mat3_f32 {
+    d00: f32,
+    d01: f32,
+    d02: f32,
+    d10: f32,
+    d11: f32,
+    d12: f32,
+    d20: f32,
+    d21: f32,
+    d22: f32,
+}
+
+impl mat3_f32 {
+    pub fn new(
+        d00: f32, d01: f32, d02: f32,
+        d10: f32, d11: f32, d12: f32,
+        d20: f32, d21: f32, d22: f32,
+    ) -> mat3_f32 {
+        mat3_f32 {
+            d00,
+            d01,
+            d02,
+            d10,
+            d11,
+            d12,
+            d20,
+            d21,
+            d22,
+        }
+    }
+
+    pub unsafe fn vertex_attrib_pointer(gl: &gl::Gl, stride: usize, location: usize, offset: usize) {
+        gl.EnableVertexAttribArray(location as gl::types::GLuint);
+        gl.VertexAttribPointer(
+            location as gl::types::GLuint,
+            9,
+            gl::FLOAT,
+            gl::FALSE,
+            stride as gl::types::GLint,
+            offset as *const gl::types::GLvoid,
+        );
+    }
+}
+
+impl From<(f32, f32, f32, f32, f32, f32, f32, f32, f32)> for mat3_f32 {
+    fn from(other: (f32, f32, f32, f32, f32, f32, f32, f32, f32)) -> Self {
+        mat3_f32::new(
+            other.0, other.1, other.2,
+            other.3, other.4, other.5,
+            other.6, other.7, other.8,
+        )
     }
 }

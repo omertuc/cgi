@@ -1,6 +1,7 @@
-use gl;
 use failure;
-use crate::render_gl::{self, data, buffer};
+use gl;
+
+use crate::render_gl::{self, buffer, data};
 use crate::resources::Resources;
 
 #[derive(VertexAttribPointers)]
@@ -9,41 +10,52 @@ use crate::resources::Resources;
 struct Vertex {
     pos: data::f32_f32_f32,
     clr: data::u2_u10_u10_u10_rev_float,
+    rot: data::f32_,
 }
 
 pub struct Triangle {
     program: render_gl::Program,
-    _vbo: buffer::ArrayBuffer,
+    vbo: buffer::ArrayBuffer,
     vao: buffer::VertexArray,
 }
 
 impl Triangle {
     pub fn new(res: &Resources, gl: &gl::Gl) -> Result<Triangle, failure::Error> {
+        let default_angle = std::f32::consts::PI;
         let program = render_gl::Program::from_res(gl, res, "shaders/triangle")?;
 
+        let vbo = buffer::ArrayBuffer::new(&gl);
+        let vao = buffer::VertexArray::new(&gl);
+
+        let triangle = Triangle {
+            program,
+            vbo,
+            vao,
+        };
+
+        triangle.set_angle(&gl, default_angle);
+
+        Ok(triangle)
+    }
+
+    pub fn set_angle(&self, gl: &gl::Gl, angle: f32) {
         let vertices: Vec<Vertex> = vec![
-            Vertex { pos: (0.5, -0.5, 0.0).into(), clr: (1.0, 0.0, 0.0, 1.0).into() },
-            Vertex { pos: (-0.5, -0.5, 0.0).into(), clr: (0.0, 1.0, 0.0, 1.0).into() },
-            Vertex { pos: (0.0, 0.5, 0.0).into(), clr: (0.0, 0.0, 1.0, 1.0).into() },
+            Vertex { pos: (0.5, -0.5, 0.0).into(), clr: (1.0, 0.0, 0.0, 1.0).into(), rot: angle.into() },
+            Vertex { pos: (-0.5, -0.5, 0.0).into(), clr: (0.0, 1.0, 0.0, 1.0).into(), rot: angle.into() },
+            Vertex { pos: (0.0, 0.5, 0.0).into(), clr: (0.0, 0.0, 1.0, 1.0).into(), rot: angle.into() },
         ];
 
-        let vbo = buffer::ArrayBuffer::new(&gl);
-        vbo.bind();
-        vbo.static_draw_data(&vertices);
-        vbo.unbind();
+        self.vbo.bind();
+        self.vbo.dynamic_draw_data(&vertices);
+        self.vbo.unbind();
 
-        let vao = buffer::VertexArray::new(&gl);
-        vao.bind();
-        vbo.bind();
+        self.vao.bind();
+        self.vbo.bind();
         Vertex::vertex_attrib_pointers(&gl);
-        vbo.unbind();
-        vao.unbind();
+        self.vbo.unbind();
+        self.vao.unbind();
 
-        Ok(Triangle {
-            program,
-            _vbo: vbo,
-            vao,
-        })
+        self.render(&gl);
     }
 
     pub fn render(&self, gl: &gl::Gl) {

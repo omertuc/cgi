@@ -55,7 +55,12 @@ fn run() -> Result<(), failure::Error> {
     let mut event_pump = sdl.event_pump().map_err(err_msg)?;
 
     let triangle = triangle::Triangle::new(&res, &gl)?;
+    let triangle2 = triangle::Triangle::new(&res, &gl)?;
+    let triangle3 = triangle::Triangle::new(&res, &gl)?;
+    let triangle4 = triangle::Triangle::new(&res, &gl)?;
+    let triangle5 = triangle::Triangle::new(&res, &gl)?;
 
+    let mut rot = 0.0f32;
     'main: loop {
         for event in event_pump.poll_iter() {
             match event {
@@ -71,10 +76,16 @@ fn run() -> Result<(), failure::Error> {
             }
         }
 
-        color_buffer.clear(&gl);
-        triangle.render(&gl);
+        rot += 0.01f32;
 
-        window.gl_swap_window()
+        color_buffer.clear(&gl);
+        triangle.set_angle(&gl, rot);
+        triangle2.set_angle(&gl, rot + 0.5f32);
+        triangle3.set_angle(&gl, rot + 1f32);
+        triangle4.set_angle(&gl, rot + 1.5f32);
+        triangle5.set_angle(&gl, rot + 2.5f32);
+
+        window.gl_swap_window();
     }
 
     Ok(())

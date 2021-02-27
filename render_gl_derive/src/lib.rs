@@ -54,7 +54,7 @@ fn generate_struct_field_vertex_attrib_pointer_call(field: &syn::Field) -> proc_
             #field_ty::vertex_attrib_pointer(gl, stride, location, offset);
         }
 
-        offset = std::mem::size_of::<#field_ty>();
+        offset += std::mem::size_of::<#field_ty>();
         location += 1;
     }
 }

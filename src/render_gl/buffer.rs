@@ -11,15 +11,19 @@ pub trait BufferType {
 }
 
 pub struct BufferTypeArray;
+
 impl BufferType for BufferTypeArray {
     const BUFFER_TYPE: gl::types::GLuint = gl::ARRAY_BUFFER;
 }
+
 pub type ArrayBuffer = Buffer<BufferTypeArray>;
 
 pub struct BufferTypeElementArray;
+
 impl BufferType for BufferTypeElementArray {
     const BUFFER_TYPE: gl::types::GLuint = gl::ELEMENT_ARRAY_BUFFER;
 }
+
 pub type ElementArrayBuffer = Buffer<BufferTypeElementArray>;
 
 impl<B> Buffer<B> where B: BufferType {
@@ -49,13 +53,13 @@ impl<B> Buffer<B> where B: BufferType {
         }
     }
 
-    pub fn static_draw_data<T>(&self, data: &[T]) {
+    pub fn dynamic_draw_data<T>(&self, data: &[T]) {
         unsafe {
             self.gl.BufferData(
                 gl::ARRAY_BUFFER,
                 (data.len() * ::std::mem::size_of::<T>()) as gl::types::GLsizeiptr,
                 data.as_ptr() as *const gl::types::GLvoid,
-                gl::STATIC_DRAW,
+                gl::DYNAMIC_DRAW,
             );
         }
     }
