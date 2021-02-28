@@ -10,7 +10,9 @@ use crate::resources::Resources;
 pub struct Vertex {
     pos: data::f32_f32_f32,
     clr: data::u2_u10_u10_u10_rev_float,
-    rot: data::f32_,
+    pitch: data::f32_,
+    yaw: data::f32_,
+    roll: data::f32_,
 }
 
 pub struct TrianglesDraw {
@@ -59,29 +61,35 @@ impl TrianglesDraw {
 }
 
 pub struct Triangle {
-    angle: f32
+    pitch: f32,
+    yaw: f32,
+    roll: f32
 }
 
 impl Triangle {
-    pub fn new(angle: f32) -> Triangle {
+    pub fn new(pitch: f32, yaw: f32, roll: f32) -> Triangle {
         Triangle {
-            angle
+            pitch, yaw, roll
         }
     }
 
-    pub fn set_angle(&mut self, angle: f32) {
-        self.angle = angle
+    pub fn add_pitch(&mut self, angle: f32) {
+        self.pitch += angle
     }
 
-    pub fn add_angle(&mut self, angle: f32) {
-        self.angle += angle
+    pub fn add_yaw(&mut self, angle: f32) {
+        self.yaw += angle
+    }
+
+    pub fn add_roll(&mut self, angle: f32) {
+        self.roll += angle
     }
 
     pub fn vertices(&self) -> Vec<Vertex> {
     vec![
-        Vertex { pos: (0.5, -0.5, 0.0).into(), clr: (0.2, 0.2, 0.4, 0.3).into(), rot: self.angle.into() },
-        Vertex { pos: (-0.5, -0.5, 0.0).into(), clr: (0.1, 0.1, 0.3, 0.3).into(), rot: self.angle.into() },
-        Vertex { pos: (0.0, 0.5, 0.0).into(), clr: (0.3, 0.3, 0.5, 0.3).into(), rot: self.angle.into() },
+        Vertex { pos: (0.5, -0.5, 0.0).into(), clr: (0.2, 0.2, 0.4, 0.3).into(), pitch: self.pitch.into(), yaw: self.yaw.into(), roll: self.roll.into() },
+        Vertex { pos: (-0.5, -0.5, 0.0).into(), clr: (0.1, 0.1, 0.3, 0.3).into(),pitch: self.pitch.into(), yaw: self.yaw.into(), roll: self.roll.into() },
+        Vertex { pos: (0.0, 0.5, 0.0).into(), clr: (0.3, 0.3, 0.5, 0.3).into(), pitch: self.pitch.into(), yaw: self.yaw.into(), roll: self.roll.into() },
     ]
     }
 

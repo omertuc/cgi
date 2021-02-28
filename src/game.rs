@@ -1,7 +1,7 @@
-use crate::resources::Resources;
-use crate::{triangle, TICK_LENGTH_US};
+use std::f32::consts::{PI, TAU};
 
-use std::f32::consts::{TAU, PI};
+use crate::{TICK_LENGTH_US, triangle};
+use crate::resources::Resources;
 
 const SPIN_PER_SECOND: f32 = TAU / 3f32;
 const US_PER_SECOND: u64 = 1_000_000;
@@ -13,8 +13,11 @@ struct Settings {
 pub(crate) struct Game {
     triangle_draw: triangle::TrianglesDraw,
     triangles: Vec<triangle::Triangle>,
-    spin_right: bool,
-    spin_left: bool,
+
+    // movement
+    roll: f32,
+    yaw: f32,
+    pitch: f32,
 
     // sdl
     video_subsystem: sdl2::VideoSubsystem,
@@ -44,13 +47,13 @@ impl Game {
     pub(crate) fn process(&mut self, timer: u64) {
         let ticks = self.update_ticks(timer);
 
-        let spin_per_tick = SPIN_PER_SECOND * self.tick_second_ratio;
+        let pitch = self.pitch * self.tick_second_ratio;
+        let yaw = self.yaw * self.tick_second_ratio;
+        let roll = self.roll * self.tick_second_ratio;
 
-        if self.spin_right {
-            self.triangles.iter_mut().for_each(|t| t.add_angle(spin_per_tick * ticks as f32));
-        } else if self.spin_left {
-            self.triangles.iter_mut().for_each(|t| t.add_angle(-spin_per_tick * ticks as f32));
-        }
+        self.triangles.iter_mut().for_each(|t| t.add_pitch(pitch * ticks as f32));
+        self.triangles.iter_mut().for_each(|t| t.add_yaw(yaw * ticks as f32));
+        self.triangles.iter_mut().for_each(|t| t.add_roll(roll * ticks as f32));
     }
 
     pub(crate) fn draw(&self, gl: &gl::Gl) {
@@ -60,12 +63,12 @@ impl Game {
     pub fn new(res: Resources, gl: &gl::Gl, initial_time: u64, timer_frequency: u64,
                tick_length_us: u64, video_subsystem: sdl2::VideoSubsystem) -> Result<Game, failure::Error> {
         let triangle_draw = triangle::TrianglesDraw::new(&res, &gl)?;
-        let triangle_count = 5;
+        let triangle_count = 1;
 
         let mut triangles: Vec<triangle::Triangle> = (0..triangle_count).into_iter().map(
             |triangle_index| (triangle_index as f32) * (TAU / triangle_count as f32)
         ).map(
-            |angle| triangle::Triangle::new(angle)
+            |angle| triangle::Triangle::new(angle, angle, angle)
         ).collect();
 
         let counter_per_us: u64 = US_PER_SECOND / timer_frequency;
@@ -73,8 +76,9 @@ impl Game {
         let mut game = Game {
             triangle_draw,
             triangles,
-            spin_right: false,
-            spin_left: false,
+            roll: 0f32,
+            yaw: 0f32,
+            pitch: 0f32,
             tick_length_us,
             tick_length_counter: (counter_per_us * tick_length_us),
             previous_timer: initial_time,
@@ -84,7 +88,7 @@ impl Game {
             video_subsystem,
             settings: Settings {
                 vsync: false,
-            }
+            },
         };
 
         game.disable_vsync();
@@ -119,10 +123,30 @@ impl Game {
             } => {
                 match code {
                     sdl2::keyboard::Keycode::D => {
-                        self.spin_right = true;
+                        match mode {
+                            sdl2::keyboard::Mod::LSHIFTMOD => {
+                                self.roll = SPIN_PER_SECOND;
+                            }
+                            _ => {
+                                self.yaw = SPIN_PER_SECOND;
+                            }
+                        }
                     }
                     sdl2::keyboard::Keycode::A => {
-                        self.spin_left = true;
+                        match mode {
+                            sdl2::keyboard::Mod::LSHIFTMOD => {
+                                self.roll = -SPIN_PER_SECOND;
+                            }
+                            _ => {
+                                self.yaw = -SPIN_PER_SECOND;
+                            }
+                        }
+                    }
+                    sdl2::keyboard::Keycode::W => {
+                        self.pitch = SPIN_PER_SECOND;
+                    }
+                    sdl2::keyboard::Keycode::S => {
+                        self.pitch = -SPIN_PER_SECOND;
                     }
                     _ => {}
                 }
@@ -133,14 +157,12 @@ impl Game {
                 ..
             } => {
                 match code {
-                    sdl2::keyboard::Keycode::D => {
-                        self.spin_right = false;
+                    sdl2::keyboard::Keycode::D | sdl2::keyboard::Keycode::A => {
+                        self.roll = 0f32;
+                        self.yaw = 0f32;
                     }
-                    sdl2::keyboard::Keycode::A => {
-                        self.spin_left = false;
-                    }
-                    sdl2::keyboard::Keycode::V => {
-                        self.toggle_vsync();
+                    sdl2::keyboard::Keycode::W | sdl2::keyboard::Keycode::S => {
+                        self.pitch = 0f32;
                     }
                     _ => {}
                 }
