@@ -23,7 +23,6 @@ pub struct TrianglesDraw {
 
 impl TrianglesDraw {
     pub fn new(res: &Resources, gl: &gl::Gl) -> Result<TrianglesDraw, failure::Error> {
-        let default_angle = std::f32::consts::PI;
         let program = render_gl::Program::from_res(gl, res, "shaders/triangle")?;
 
         let vbo = buffer::ArrayBuffer::new(&gl);

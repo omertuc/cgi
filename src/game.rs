@@ -1,12 +1,12 @@
 use std::collections::HashSet;
-use std::f32::consts::{PI, TAU};
+use std::f32::consts::TAU;
 
 use sdl2::keyboard::Scancode;
 
-use crate::{TICK_LENGTH_US, triangle};
+use crate::triangle;
 use crate::resources::Resources;
 
-const SPIN_PER_SECOND: f32 = TAU;
+const SPIN_PER_SECOND: f32 = TAU / 2f32;
 const US_PER_SECOND: u64 = 1_000_000;
 
 struct Settings {
@@ -38,10 +38,6 @@ impl GameKey {
             GameKey::Up => { [GameKeyGroup::Vertical] }
             GameKey::Down => { [GameKeyGroup::Vertical] }
         }.iter().copied().collect()
-    }
-
-    fn is_in_same_keygroup_as(self, other: &GameKey) -> bool {
-        self.groups().intersection(&other.groups()).count() > 0
     }
 }
 
@@ -132,9 +128,7 @@ pub(crate) struct Game {
     video_subsystem: sdl2::VideoSubsystem,
 
     // Time measurements
-    timer_frequency: u64,
     previous_timer: u64,
-    tick_length_us: u64,
     partial_tick_counter: u64,
     tick_length_counter: u64,
     tick_second_ratio: f32,
@@ -174,7 +168,7 @@ impl Game {
         let triangle_draw = triangle::TrianglesDraw::new(&res, &gl)?;
         let triangle_count = 1;
 
-        let mut triangles: Vec<triangle::Triangle> = (0..triangle_count).into_iter().map(
+        let triangles: Vec<triangle::Triangle> = (0..triangle_count).into_iter().map(
             |triangle_index| (triangle_index as f32) * (TAU / triangle_count as f32)
         ).map(
             |angle| triangle::Triangle::new(angle, angle, angle)
@@ -188,10 +182,8 @@ impl Game {
             roll: 0f32,
             yaw: 0f32,
             pitch: 0f32,
-            tick_length_us,
             tick_length_counter: (counter_per_us * tick_length_us),
             previous_timer: initial_time,
-            timer_frequency,
             partial_tick_counter: 0,
             tick_second_ratio: (tick_length_us as f32) / (US_PER_SECOND as f32),
             video_subsystem,
@@ -207,13 +199,19 @@ impl Game {
     }
 
     pub fn enable_vsync(&mut self) {
-        self.video_subsystem.gl_set_swap_interval(sdl2::video::SwapInterval::VSync);
-        self.settings.vsync = true;
+        if let Ok(_) = self.video_subsystem.gl_set_swap_interval(sdl2::video::SwapInterval::VSync) {
+            self.settings.vsync = true;
+        } else {
+            println!("Failed to enable vsync")
+        }
     }
 
     pub fn disable_vsync(&mut self) {
-        self.video_subsystem.gl_set_swap_interval(sdl2::video::SwapInterval::Immediate);
-        self.settings.vsync = false;
+        if let Ok(_) = self.video_subsystem.gl_set_swap_interval(sdl2::video::SwapInterval::Immediate) {
+            self.settings.vsync = false;
+        } else {
+            println!("Failed to disable vsync")
+        }
     }
 
     pub fn toggle_vsync(&mut self) {
@@ -251,8 +249,6 @@ impl Game {
             self.roll = 0f32;
             self.yaw = 0f32;
         }
-
-        println!("{:#?}", self.key_stack);
     }
 
     pub fn input_handler(&mut self, event: sdl2::event::Event) {
@@ -265,7 +261,6 @@ impl Game {
         match event {
             sdl2::event::Event::KeyDown {
                 scancode: Option::Some(code),
-                keymod: mode,
                 ..
             } => {
                 self.key_stack = if left_keys.contains(&code) {
@@ -284,7 +279,6 @@ impl Game {
             }
             sdl2::event::Event::KeyUp {
                 scancode: Option::Some(code),
-                keymod: mode,
                 ..
             } => {
                 self.key_stack = if left_keys.contains(&code) {

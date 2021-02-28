@@ -37,7 +37,7 @@ fn run() -> Result<(), failure::Error> {
     gl_attr.set_context_profile(sdl2::video::GLProfile::Core);
     gl_attr.set_context_version(4, 6);
 
-    let mut window = video_subsystem
+    let window = video_subsystem
         .window("Game", 2560, 1440)
         .opengl()
         .resizable()
