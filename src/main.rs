@@ -41,6 +41,7 @@ fn run() -> Result<(), failure::Error> {
         .window("Game", 2560, 1440)
         .opengl()
         .resizable()
+        .fullscreen_desktop()
         .build().map_err(err_msg)?;
 
     let _gl_context = window.gl_create_context().map_err(err_msg)?;

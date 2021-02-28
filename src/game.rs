@@ -7,6 +7,7 @@ use crate::resources::Resources;
 use crate::triangle;
 
 const SPIN_PER_SECOND: f32 = TAU / 2f32;
+const SPIN_PER_MOUSE_PIXEL: f32 = TAU / 300f32;
 const US_PER_SECOND: u64 = 1_000_000;
 
 struct Settings {
@@ -41,44 +42,7 @@ impl GameKey {
     }
 }
 
-type MouseLocation = (i32, i32);
-
-#[derive(Debug, Clone, Eq, PartialEq)]
-struct MouseDragTracker {
-    down: Option<MouseLocation>
-}
-
-impl MouseDragTracker {
-    fn new() -> MouseDragTracker {
-        MouseDragTracker {
-            down: None
-        }
-    }
-
-    fn press(&self, location: MouseLocation) -> MouseDragTracker {
-        MouseDragTracker {
-            down: Some(location)
-        }
-    }
-
-    fn depress(&self) -> MouseDragTracker {
-        MouseDragTracker {
-            down: None
-        }
-    }
-
-    fn deltas(&self, current: MouseLocation) -> (i32, i32) {
-        match self.down {
-            Some(location) => {
-                (location.0 - current.0, location.1 - current.1)
-            }
-            None => {
-                (0, 0)
-            }
-        }
-    }
-}
-
+type MouseMovement = (i32, i32);
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 struct KeyStack {
@@ -96,7 +60,7 @@ impl KeyStack {
         if self.is_pressed(key) {
             self.clone()
         } else {
-            let mut new = self.normalize().clone();
+            let mut new = self.clone();
             new.stack.push(key);
             new.into()
         }
@@ -152,7 +116,7 @@ pub(crate) struct Game {
 
     // controls
     key_stack: KeyStack,
-    mouse_drag_tracker: MouseDragTracker,
+    mouse_down: bool,
 
     // movement
     roll: f32,
@@ -226,7 +190,7 @@ impl Game {
                 vsync: false,
             },
             key_stack: KeyStack::new(),
-            mouse_drag_tracker: MouseDragTracker::new(),
+            mouse_down: false,
         };
 
         game.disable_vsync();
@@ -287,10 +251,14 @@ impl Game {
         }
     }
 
-    pub fn mouse_moved(&mut self, location: MouseLocation) {
-        if let Some(_location) = self.mouse_drag_tracker.down {
-            let deltas = self.mouse_drag_tracker.deltas(location);
-            println!("Drag - ({}, {})", deltas.0, deltas.1)
+    pub fn mouse_moved(&mut self, movement: MouseMovement) {
+        if self.mouse_down {
+            if self.key_stack.normalize().is_pressed(GameKey::RollModifier) {
+                self.triangles.iter_mut().for_each(|t| t.add_roll(SPIN_PER_MOUSE_PIXEL * movement.0 as f32));
+            } else {
+                self.triangles.iter_mut().for_each(|t| t.add_yaw(SPIN_PER_MOUSE_PIXEL * movement.0 as f32));
+            }
+            self.triangles.iter_mut().for_each(|t| t.add_pitch(SPIN_PER_MOUSE_PIXEL * movement.1 as f32));
         }
     }
 
@@ -303,23 +271,21 @@ impl Game {
 
         match event {
             sdl2::event::Event::MouseButtonDown {
-                x,
-                y,
                 ..
             } => {
-                self.mouse_drag_tracker = self.mouse_drag_tracker.press((x, y))
+                self.mouse_down = true
             }
             sdl2::event::Event::MouseButtonUp {
                 ..
             } => {
-                self.mouse_drag_tracker = self.mouse_drag_tracker.depress()
+                self.mouse_down = false
             }
             sdl2::event::Event::MouseMotion {
-                x,
-                y,
+                xrel,
+                yrel,
                 ..
             } => {
-                self.mouse_moved((x, y))
+                self.mouse_moved((xrel, yrel))
             }
             sdl2::event::Event::KeyDown {
                 scancode: Option::Some(code),
