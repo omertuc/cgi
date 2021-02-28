@@ -48,8 +48,6 @@ fn run() -> Result<(), failure::Error> {
     let gl = gl::Gl::load_with(|s| video_subsystem.gl_get_proc_address(s)
         as *const std::os::raw::c_void);
 
-    println!("{:#?}", video_subsystem.current_display_mode(0).unwrap());
-
     unsafe {
         gl.Enable(gl::BLEND);
         gl.BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);

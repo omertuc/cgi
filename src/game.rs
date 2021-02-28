@@ -1,18 +1,44 @@
 use std::f32::consts::{PI, TAU};
 
+use sdl2::keyboard::Scancode;
+
 use crate::{TICK_LENGTH_US, triangle};
 use crate::resources::Resources;
 
-const SPIN_PER_SECOND: f32 = TAU / 3f32;
+const SPIN_PER_SECOND: f32 = TAU;
 const US_PER_SECOND: u64 = 1_000_000;
 
 struct Settings {
     vsync: bool,
 }
 
+#[derive(Debug)]
+struct KeyState {
+    roll_modifier: bool,
+    right: bool,
+    left: bool,
+    up: bool,
+    down: bool,
+}
+
+impl KeyState {
+    fn new() -> KeyState {
+        KeyState {
+            roll_modifier: false,
+            right: false,
+            left: false,
+            up: false,
+            down: false,
+        }
+    }
+}
+
 pub(crate) struct Game {
     triangle_draw: triangle::TrianglesDraw,
     triangles: Vec<triangle::Triangle>,
+
+    // controls
+    key_state: KeyState,
 
     // movement
     roll: f32,
@@ -22,7 +48,7 @@ pub(crate) struct Game {
     // sdl
     video_subsystem: sdl2::VideoSubsystem,
 
-    // Time constants
+    // Time measurements
     timer_frequency: u64,
     previous_timer: u64,
     tick_length_us: u64,
@@ -89,6 +115,7 @@ impl Game {
             settings: Settings {
                 vsync: false,
             },
+            key_state: KeyState::new(),
         };
 
         game.disable_vsync();
@@ -114,60 +141,105 @@ impl Game {
         }
     }
 
+    pub fn keyboard_handler(&mut self) {
+        let speed = SPIN_PER_SECOND;
+
+        if self.key_state.left {
+            if self.key_state.roll_modifier {
+                self.roll = speed;
+            } else {
+                self.yaw = speed;
+            }
+        }
+
+        if self.key_state.right {
+            if self.key_state.roll_modifier {
+                self.roll = -speed;
+            } else {
+                self.yaw = -speed;
+            }
+        }
+
+        if !self.key_state.left && !self.key_state.right {
+            self.roll = 0f32;
+            self.yaw = 0f32;
+        }
+
+        if self.key_state.up {
+            self.pitch = speed;
+        }
+
+        if self.key_state.down {
+            self.pitch = -speed;
+        }
+
+        if !(self.key_state.up || self.key_state.down) {
+            self.pitch = 0f32;
+        }
+    }
+
     pub fn input_handler(&mut self, event: sdl2::event::Event) {
+        let left_keys = [Scancode::A, Scancode::Left];
+        let right_keys = [Scancode::D, Scancode::Right];
+        let up_keys = [Scancode::W, Scancode::Up];
+        let down_keys = [Scancode::S, Scancode::Down];
+        let roll_modifier = [Scancode::LShift, Scancode::RShift];
+
         match event {
             sdl2::event::Event::KeyDown {
-                keycode: Option::Some(code),
+                scancode: Option::Some(code),
                 keymod: mode,
                 ..
             } => {
-                match code {
-                    sdl2::keyboard::Keycode::D => {
-                        match mode {
-                            sdl2::keyboard::Mod::LSHIFTMOD => {
-                                self.roll = SPIN_PER_SECOND;
-                            }
-                            _ => {
-                                self.yaw = SPIN_PER_SECOND;
-                            }
-                        }
-                    }
-                    sdl2::keyboard::Keycode::A => {
-                        match mode {
-                            sdl2::keyboard::Mod::LSHIFTMOD => {
-                                self.roll = -SPIN_PER_SECOND;
-                            }
-                            _ => {
-                                self.yaw = -SPIN_PER_SECOND;
-                            }
-                        }
-                    }
-                    sdl2::keyboard::Keycode::W => {
-                        self.pitch = SPIN_PER_SECOND;
-                    }
-                    sdl2::keyboard::Keycode::S => {
-                        self.pitch = -SPIN_PER_SECOND;
-                    }
-                    _ => {}
+                if left_keys.contains(&code) {
+                    self.key_state.left = true;
+                }
+                if right_keys.contains(&code) {
+                    self.key_state.right = true;
+                }
+                if up_keys.contains(&code) {
+                    self.key_state.up = true;
+                }
+                if down_keys.contains(&code) {
+                    self.key_state.down = true;
+                }
+                if roll_modifier.contains(&code) {
+                    self.key_state.roll_modifier = true;
                 }
             }
             sdl2::event::Event::KeyUp {
-                keycode: Option::Some(code),
+                scancode: Option::Some(code),
                 keymod: mode,
                 ..
             } => {
+                if left_keys.contains(&code) {
+                    self.key_state.left = false;
+                }
+                if right_keys.contains(&code) {
+                    self.key_state.right = false;
+                }
+                if up_keys.contains(&code) {
+                    self.key_state.up = false;
+                }
+                if down_keys.contains(&code) {
+                    self.key_state.down = false;
+                }
+                if roll_modifier.contains(&code) {
+                    self.key_state.roll_modifier = false;
+                }
+
                 match code {
-                    sdl2::keyboard::Keycode::D | sdl2::keyboard::Keycode::A => {
-                        self.roll = 0f32;
-                        self.yaw = 0f32;
-                    }
-                    sdl2::keyboard::Keycode::W | sdl2::keyboard::Keycode::S => {
-                        self.pitch = 0f32;
+                    sdl2::keyboard::Scancode::V => {
+                        self.toggle_vsync()
                     }
                     _ => {}
                 }
             }
             _ => {}
         };
+
+        println!("{:#?}", self.key_state);
+
+        self.keyboard_handler();
     }
 }
