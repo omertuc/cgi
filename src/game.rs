@@ -144,6 +144,8 @@ impl Game {
     pub fn keyboard_handler(&mut self) {
         let speed = SPIN_PER_SECOND;
 
+        println!("{:#?}", self.key_state);
+
         if self.key_state.left {
             if self.key_state.roll_modifier {
                 self.roll = speed;
@@ -160,7 +162,7 @@ impl Game {
             }
         }
 
-        if !self.key_state.left && !self.key_state.right {
+        if (!self.key_state.left && !self.key_state.right) || (self.key_state.right && self.key_state.left) {
             self.roll = 0f32;
             self.yaw = 0f32;
         }
@@ -173,7 +175,7 @@ impl Game {
             self.pitch = -speed;
         }
 
-        if !(self.key_state.up || self.key_state.down) {
+        if (!self.key_state.up && !self.key_state.down) || (self.key_state.up && self.key_state.down) {
             self.pitch = 0f32;
         }
     }
@@ -237,8 +239,6 @@ impl Game {
             }
             _ => {}
         };
-
-        println!("{:#?}", self.key_state);
 
         self.keyboard_handler();
     }
