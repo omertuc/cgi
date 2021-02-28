@@ -14,6 +14,7 @@ pub mod render_gl;
 pub mod resources;
 mod triangle;
 mod debug;
+mod game;
 
 
 fn main() {
@@ -21,6 +22,9 @@ fn main() {
         println!("{}", debug::failure_to_string(e));
     }
 }
+
+const TICK_LENGTH_US: u64 = 100;
+
 
 fn run() -> Result<(), failure::Error> {
     let res = Resources::from_relative_exe_path(Path::new("assets"))?;
@@ -41,7 +45,7 @@ fn run() -> Result<(), failure::Error> {
 
     let _gl_context = window.gl_create_context().map_err(err_msg)?;
 
-    video_subsystem.gl_set_swap_interval(1);
+    video_subsystem.gl_set_swap_interval(sdl2::video::SwapInterval::Immediate);
 
     let gl = gl::Gl::load_with(|s| video_subsystem.gl_get_proc_address(s)
         as *const std::os::raw::c_void);
@@ -64,15 +68,12 @@ fn run() -> Result<(), failure::Error> {
 
     let mut event_pump = sdl.event_pump().map_err(err_msg)?;
 
-    let triangle_draw = triangle::TrianglesDraw::new(&res, &gl)?;
+    let timer_subsystem = sdl.timer().map_err(err_msg)?;
 
-    let triangle_count = 3;
-
-    let mut triangles: Vec<triangle::Triangle> = (0..triangle_count).into_iter().map(
-        |triangle_index| (triangle_index as f32) * (std::f32::consts::TAU / triangle_count as f32)
-    ).map(
-        |angle| triangle::Triangle::new(angle)
-    ).collect();
+    let mut game = game::Game::new(res, &gl,
+                                   timer_subsystem.performance_counter(),
+                                   timer_subsystem.performance_frequency(),
+                                   TICK_LENGTH_US)?;
 
     'main: loop {
         for event in event_pump.poll_iter() {
@@ -85,14 +86,16 @@ fn run() -> Result<(), failure::Error> {
                     viewport.update_size(w, h);
                     viewport.set_used(&gl);
                 }
-                _ => {}
+                _ => {
+                    game.input_handler(event);
+                }
             }
         }
 
         color_buffer.clear(&gl);
 
-        triangles.iter_mut().for_each(|t| t.add_angle(0.01f32));
-        triangle_draw.draw(&gl, triangles.iter().flat_map(triangle::Triangle::vertices).collect());
+        game.process(timer_subsystem.performance_counter());
+        game.draw(&gl);
 
         window.gl_swap_window();
     }
