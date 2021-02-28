@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::f32::consts::{PI, TAU};
 
 use sdl2::keyboard::Scancode;
@@ -12,23 +13,105 @@ struct Settings {
     vsync: bool,
 }
 
-#[derive(Debug)]
-struct KeyState {
-    roll_modifier: bool,
-    right: bool,
-    left: bool,
-    up: bool,
-    down: bool,
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+enum GameKey {
+    RollModifier,
+    Right,
+    Left,
+    Up,
+    Down,
 }
 
-impl KeyState {
-    fn new() -> KeyState {
-        KeyState {
-            roll_modifier: false,
-            right: false,
-            left: false,
-            up: false,
-            down: false,
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+enum GameKeyGroup {
+    Horizontal,
+    Vertical,
+    Modifiers,
+}
+
+impl GameKey {
+    fn groups(self) -> HashSet<GameKeyGroup> {
+        match self {
+            GameKey::RollModifier => { [GameKeyGroup::Modifiers] }
+            GameKey::Right => { [GameKeyGroup::Horizontal] }
+            GameKey::Left => { [GameKeyGroup::Horizontal] }
+            GameKey::Up => { [GameKeyGroup::Vertical] }
+            GameKey::Down => { [GameKeyGroup::Vertical] }
+        }.iter().copied().collect()
+    }
+
+    fn is_in_same_keygroup_as(self, other: &GameKey) -> bool {
+        self.groups().intersection(&other.groups()).count() > 0
+    }
+}
+
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+struct KeyStack {
+    stack: Vec<GameKey>,
+}
+
+impl KeyStack {
+    fn new() -> KeyStack {
+        KeyStack {
+            stack: vec![],
+        }
+    }
+
+    fn press(&self, key: GameKey) -> KeyStack {
+        if self.is_pressed(key) {
+            self.clone()
+        } else {
+            let mut new = self.normalize().clone();
+            new.stack.push(key);
+            new.into()
+        }
+    }
+
+    fn depress(&self, key: GameKey) -> KeyStack {
+        self.stack.clone().into_iter().filter(
+            |other| &key != other).collect::<Vec<GameKey>>().into()
+    }
+
+    fn normalize(&self) -> KeyStack {
+        if self.stack.len() == 0 {
+            return KeyStack::new()
+        }
+
+        let mut encountered_groups = vec![].into_iter().collect();
+
+        let mut new = KeyStack::new();
+
+        for i in (0..self.stack.len()).rev() {
+            let current = self.stack[i];
+            let groups = current.groups();
+            if groups.intersection(&encountered_groups).count() != 0 {
+                continue
+            }
+
+            for group in groups {
+                encountered_groups.insert(group);
+            }
+
+            new.stack.push(current)
+        }
+
+        new
+    }
+
+    fn is_normalized_pressed(&self, key: GameKey) -> bool {
+        self.normalize().stack.contains(&key)
+    }
+
+    fn is_pressed(&self, key: GameKey) -> bool {
+        self.stack.contains(&key)
+    }
+}
+
+impl From<Vec<GameKey>> for KeyStack {
+    fn from(other_vec: Vec<GameKey>) -> KeyStack {
+        KeyStack {
+            stack: other_vec
         }
     }
 }
@@ -38,7 +121,7 @@ pub(crate) struct Game {
     triangles: Vec<triangle::Triangle>,
 
     // controls
-    key_state: KeyState,
+    key_stack: KeyStack,
 
     // movement
     roll: f32,
@@ -115,7 +198,7 @@ impl Game {
             settings: Settings {
                 vsync: false,
             },
-            key_state: KeyState::new(),
+            key_stack: KeyStack::new(),
         };
 
         game.disable_vsync();
@@ -144,40 +227,32 @@ impl Game {
     pub fn keyboard_handler(&mut self) {
         let speed = SPIN_PER_SECOND;
 
-        println!("{:#?}", self.key_state);
+        if self.key_stack.is_normalized_pressed(GameKey::Down) {
+            self.pitch = -speed;
+        } else if self.key_stack.is_normalized_pressed(GameKey::Up) {
+            self.pitch = speed;
+        } else {
+            self.pitch = 0f32;
+        }
 
-        if self.key_state.left {
-            if self.key_state.roll_modifier {
+        if self.key_stack.is_normalized_pressed(GameKey::Right) {
+            if self.key_stack.is_normalized_pressed(GameKey::RollModifier) {
                 self.roll = speed;
             } else {
                 self.yaw = speed;
             }
-        }
-
-        if self.key_state.right {
-            if self.key_state.roll_modifier {
+        } else if self.key_stack.is_normalized_pressed(GameKey::Left) {
+            if self.key_stack.is_normalized_pressed(GameKey::RollModifier) {
                 self.roll = -speed;
             } else {
                 self.yaw = -speed;
             }
-        }
-
-        if (!self.key_state.left && !self.key_state.right) || (self.key_state.right && self.key_state.left) {
+        } else {
             self.roll = 0f32;
             self.yaw = 0f32;
         }
 
-        if self.key_state.up {
-            self.pitch = speed;
-        }
-
-        if self.key_state.down {
-            self.pitch = -speed;
-        }
-
-        if (!self.key_state.up && !self.key_state.down) || (self.key_state.up && self.key_state.down) {
-            self.pitch = 0f32;
-        }
+        println!("{:#?}", self.key_stack);
     }
 
     pub fn input_handler(&mut self, event: sdl2::event::Event) {
@@ -193,20 +268,18 @@ impl Game {
                 keymod: mode,
                 ..
             } => {
-                if left_keys.contains(&code) {
-                    self.key_state.left = true;
-                }
-                if right_keys.contains(&code) {
-                    self.key_state.right = true;
-                }
-                if up_keys.contains(&code) {
-                    self.key_state.up = true;
-                }
-                if down_keys.contains(&code) {
-                    self.key_state.down = true;
-                }
-                if roll_modifier.contains(&code) {
-                    self.key_state.roll_modifier = true;
+                self.key_stack = if left_keys.contains(&code) {
+                    self.key_stack.press(GameKey::Left)
+                } else if right_keys.contains(&code) {
+                    self.key_stack.press(GameKey::Right)
+                } else if up_keys.contains(&code) {
+                    self.key_stack.press(GameKey::Up)
+                } else if down_keys.contains(&code) {
+                    self.key_stack.press(GameKey::Down)
+                } else if roll_modifier.contains(&code) {
+                    self.key_stack.press(GameKey::RollModifier)
+                } else {
+                    self.key_stack.clone()
                 }
             }
             sdl2::event::Event::KeyUp {
@@ -214,21 +287,19 @@ impl Game {
                 keymod: mode,
                 ..
             } => {
-                if left_keys.contains(&code) {
-                    self.key_state.left = false;
-                }
-                if right_keys.contains(&code) {
-                    self.key_state.right = false;
-                }
-                if up_keys.contains(&code) {
-                    self.key_state.up = false;
-                }
-                if down_keys.contains(&code) {
-                    self.key_state.down = false;
-                }
-                if roll_modifier.contains(&code) {
-                    self.key_state.roll_modifier = false;
-                }
+                self.key_stack = if left_keys.contains(&code) {
+                    self.key_stack.depress(GameKey::Left)
+                } else if right_keys.contains(&code) {
+                    self.key_stack.depress(GameKey::Right)
+                } else if up_keys.contains(&code) {
+                    self.key_stack.depress(GameKey::Up)
+                } else if down_keys.contains(&code) {
+                    self.key_stack.depress(GameKey::Down)
+                } else if roll_modifier.contains(&code) {
+                    self.key_stack.depress(GameKey::RollModifier)
+                } else {
+                    self.key_stack.clone()
+                };
 
                 match code {
                     sdl2::keyboard::Scancode::V => {
