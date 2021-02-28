@@ -66,6 +66,9 @@ fn run() -> Result<(), failure::Error> {
 
     let timer_subsystem = sdl.timer().map_err(err_msg)?;
 
+    sdl.mouse().show_cursor(false);
+    sdl.mouse().set_relative_mouse_mode(true);
+
     let mut game = game::Game::new(res, &gl,
                                    timer_subsystem.performance_counter(),
                                    timer_subsystem.performance_frequency(),

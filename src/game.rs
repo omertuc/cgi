@@ -3,8 +3,8 @@ use std::f32::consts::TAU;
 
 use sdl2::keyboard::Scancode;
 
-use crate::triangle;
 use crate::resources::Resources;
+use crate::triangle;
 
 const SPIN_PER_SECOND: f32 = TAU / 2f32;
 const US_PER_SECOND: u64 = 1_000_000;
@@ -41,6 +41,44 @@ impl GameKey {
     }
 }
 
+type MouseLocation = (i32, i32);
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+struct MouseDragTracker {
+    down: Option<MouseLocation>
+}
+
+impl MouseDragTracker {
+    fn new() -> MouseDragTracker {
+        MouseDragTracker {
+            down: None
+        }
+    }
+
+    fn press(&self, location: MouseLocation) -> MouseDragTracker {
+        MouseDragTracker {
+            down: Some(location)
+        }
+    }
+
+    fn depress(&self) -> MouseDragTracker {
+        MouseDragTracker {
+            down: None
+        }
+    }
+
+    fn deltas(&self, current: MouseLocation) -> (i32, i32) {
+        match self.down {
+            Some(location) => {
+                (location.0 - current.0, location.1 - current.1)
+            }
+            None => {
+                (0, 0)
+            }
+        }
+    }
+}
+
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 struct KeyStack {
@@ -71,7 +109,7 @@ impl KeyStack {
 
     fn normalize(&self) -> KeyStack {
         if self.stack.len() == 0 {
-            return KeyStack::new()
+            return KeyStack::new();
         }
 
         let mut encountered_groups = vec![].into_iter().collect();
@@ -82,7 +120,7 @@ impl KeyStack {
             let current = self.stack[i];
             let groups = current.groups();
             if groups.intersection(&encountered_groups).count() != 0 {
-                continue
+                continue;
             }
 
             for group in groups {
@@ -93,10 +131,6 @@ impl KeyStack {
         }
 
         new
-    }
-
-    fn is_normalized_pressed(&self, key: GameKey) -> bool {
-        self.normalize().stack.contains(&key)
     }
 
     fn is_pressed(&self, key: GameKey) -> bool {
@@ -118,6 +152,7 @@ pub(crate) struct Game {
 
     // controls
     key_stack: KeyStack,
+    mouse_drag_tracker: MouseDragTracker,
 
     // movement
     roll: f32,
@@ -166,7 +201,7 @@ impl Game {
     pub fn new(res: Resources, gl: &gl::Gl, initial_time: u64, timer_frequency: u64,
                tick_length_us: u64, video_subsystem: sdl2::VideoSubsystem) -> Result<Game, failure::Error> {
         let triangle_draw = triangle::TrianglesDraw::new(&res, &gl)?;
-        let triangle_count = 1;
+        let triangle_count = 100;
 
         let triangles: Vec<triangle::Triangle> = (0..triangle_count).into_iter().map(
             |triangle_index| (triangle_index as f32) * (TAU / triangle_count as f32)
@@ -191,6 +226,7 @@ impl Game {
                 vsync: false,
             },
             key_stack: KeyStack::new(),
+            mouse_drag_tracker: MouseDragTracker::new(),
         };
 
         game.disable_vsync();
@@ -225,22 +261,22 @@ impl Game {
     pub fn keyboard_handler(&mut self) {
         let speed = SPIN_PER_SECOND;
 
-        if self.key_stack.is_normalized_pressed(GameKey::Down) {
+        if self.key_stack.normalize().is_pressed(GameKey::Down) {
             self.pitch = -speed;
-        } else if self.key_stack.is_normalized_pressed(GameKey::Up) {
+        } else if self.key_stack.normalize().is_pressed(GameKey::Up) {
             self.pitch = speed;
         } else {
             self.pitch = 0f32;
         }
 
-        if self.key_stack.is_normalized_pressed(GameKey::Right) {
-            if self.key_stack.is_normalized_pressed(GameKey::RollModifier) {
+        if self.key_stack.normalize().is_pressed(GameKey::Right) {
+            if self.key_stack.normalize().is_pressed(GameKey::RollModifier) {
                 self.roll = speed;
             } else {
                 self.yaw = speed;
             }
-        } else if self.key_stack.is_normalized_pressed(GameKey::Left) {
-            if self.key_stack.is_normalized_pressed(GameKey::RollModifier) {
+        } else if self.key_stack.normalize().is_pressed(GameKey::Left) {
+            if self.key_stack.normalize().is_pressed(GameKey::RollModifier) {
                 self.roll = -speed;
             } else {
                 self.yaw = -speed;
@@ -248,6 +284,13 @@ impl Game {
         } else {
             self.roll = 0f32;
             self.yaw = 0f32;
+        }
+    }
+
+    pub fn mouse_moved(&mut self, location: MouseLocation) {
+        if let Some(_location) = self.mouse_drag_tracker.down {
+            let deltas = self.mouse_drag_tracker.deltas(location);
+            println!("Drag - ({}, {})", deltas.0, deltas.1)
         }
     }
 
@@ -259,6 +302,25 @@ impl Game {
         let roll_modifier = [Scancode::LShift, Scancode::RShift];
 
         match event {
+            sdl2::event::Event::MouseButtonDown {
+                x,
+                y,
+                ..
+            } => {
+                self.mouse_drag_tracker = self.mouse_drag_tracker.press((x, y))
+            }
+            sdl2::event::Event::MouseButtonUp {
+                ..
+            } => {
+                self.mouse_drag_tracker = self.mouse_drag_tracker.depress()
+            }
+            sdl2::event::Event::MouseMotion {
+                x,
+                y,
+                ..
+            } => {
+                self.mouse_moved((x, y))
+            }
             sdl2::event::Event::KeyDown {
                 scancode: Option::Some(code),
                 ..
