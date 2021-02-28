@@ -45,8 +45,6 @@ fn run() -> Result<(), failure::Error> {
 
     let _gl_context = window.gl_create_context().map_err(err_msg)?;
 
-    video_subsystem.gl_set_swap_interval(sdl2::video::SwapInterval::Immediate);
-
     let gl = gl::Gl::load_with(|s| video_subsystem.gl_get_proc_address(s)
         as *const std::os::raw::c_void);
 
@@ -73,7 +71,8 @@ fn run() -> Result<(), failure::Error> {
     let mut game = game::Game::new(res, &gl,
                                    timer_subsystem.performance_counter(),
                                    timer_subsystem.performance_frequency(),
-                                   TICK_LENGTH_US)?;
+                                   TICK_LENGTH_US,
+                                   video_subsystem)?;
 
     'main: loop {
         for event in event_pump.poll_iter() {

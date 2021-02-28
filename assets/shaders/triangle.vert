@@ -35,5 +35,5 @@ void main()
     0, sin(rot), cos(rot)
     );
 
-    gl_Position = vec4(pitch * yaw * roll * Position, 1.0);
+    gl_Position = vec4(yaw * pitch * roll * Position, 1.0);
 }
