@@ -6,46 +6,19 @@ use nalgebra::DimAdd;
 use sdl2::keyboard::Scancode;
 
 use controls::{GameKey, KeyStack, MouseMovement};
+use time::GameTime;
 
 use crate::resources::Resources;
 use crate::triangle;
 
-pub mod controls;
+mod controls;
+mod time;
 
 const SPIN_PER_SECOND: f32 = TAU / 2f32;
 const SPIN_PER_MOUSE_PIXEL: f32 = TAU / 300f32;
-const US_PER_SECOND: u64 = 1_000_000;
 
 struct Settings {
     vsync: bool,
-}
-
-struct GameTime {
-    previous_timer: u64,
-    partial_tick_counter: u64,
-    tick_length_counter: u64,
-    tick_second_ratio: f32,
-}
-
-impl GameTime {
-    fn new(timer_frequency: u64, tick_length_us: u64, initial_time: u64) -> GameTime {
-        let counter_per_us: u64 = US_PER_SECOND / timer_frequency;
-
-        GameTime {
-            tick_length_counter: (counter_per_us * tick_length_us),
-            previous_timer: initial_time,
-            partial_tick_counter: 0,
-            tick_second_ratio: (tick_length_us as f32) / (US_PER_SECOND as f32),
-        }
-    }
-    fn update_ticks(&mut self, timer: u64) -> u64 {
-        let time_passed_counter = self.partial_tick_counter + (timer - self.previous_timer);
-        let ticks = time_passed_counter / self.tick_length_counter;
-        self.partial_tick_counter = time_passed_counter % self.tick_length_counter;
-        self.previous_timer = timer;
-
-        return ticks;
-    }
 }
 
 pub(crate) struct Game {
@@ -228,13 +201,17 @@ impl Game {
                 scancode: Option::Some(code),
                 ..
             } => {
-                self.key_stack = self.key_stack.press(keymap[&code])
+                if let Some(key) = keymap.get(&code) {
+                    self.key_stack = self.key_stack.press(*key)
+                }
             }
             sdl2::event::Event::KeyUp {
                 scancode: Option::Some(code),
                 ..
             } => {
-                self.key_stack = self.key_stack.depress(keymap[&code]);
+                if let Some(key) = keymap.get(&code) {
+                    self.key_stack = self.key_stack.depress(*key);
+                e
 
                 match code {
                     sdl2::keyboard::Scancode::V => {
