@@ -60,9 +60,7 @@ impl<KeyType> KeyStack<KeyType> where
                 continue;
             }
 
-            for group in groups {
-                encountered_groups.insert(group);
-            }
+            encountered_groups.extend(groups.into_iter());
 
             new.stack.push(*current)
         }
