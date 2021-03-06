@@ -1,13 +1,14 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::f32::consts::TAU;
 
 use sdl2::keyboard::Scancode;
 
-use controls::{GameKey, KeyStack, MouseMovement};
+use controls::{KeyStack, MouseMovement};
 use time::GameTime;
 
 use crate::resources::Resources;
 use crate::triangle;
+use crate::game::controls::Groups;
 
 mod controls;
 mod time;
@@ -19,12 +20,40 @@ struct Settings {
     vsync: bool,
 }
 
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub enum GameKey {
+    NoOp,
+    RollModifier,
+    Right,
+    Left,
+    Up,
+    Down,
+    VsyncToggle,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+enum GameKeyGroup {
+    Horizontal,
+    Vertical,
+}
+
+impl Groups<GameKeyGroup> for GameKey{
+    fn groups(&self) -> HashSet<GameKeyGroup> {
+            match self {
+                GameKey::Right | GameKey::Left => [GameKeyGroup::Horizontal],
+                GameKey::Up | GameKey::Down => [GameKeyGroup::Vertical],
+                _ => { return HashSet::<GameKeyGroup>::new() }
+            }.iter().copied().collect()
+    }
+}
+
 pub(crate) struct Game {
     triangle_draw: triangle::TrianglesDraw,
     triangles: Vec<triangle::Triangle>,
 
     // controls
-    key_stack: KeyStack,
+    key_map: HashMap<Scancode, GameKey>,
+    key_stack: KeyStack<GameKey, GameKeyGroup>,
     mouse_down: bool,
 
     // movement
@@ -43,13 +72,13 @@ pub(crate) struct Game {
 
 pub fn init_key_map() -> HashMap<Scancode, GameKey> {
     let game_keys = hashmap! {
-            [Scancode::A, Scancode::Left] => GameKey::Left,
-            [Scancode::D, Scancode::Right] => GameKey::Right,
-            [Scancode::W, Scancode::Up] => GameKey::Up,
-            [Scancode::S, Scancode::Down] => GameKey::Down,
-            [Scancode::LShift, Scancode::RShift] => GameKey::RollModifier,
+            &[Scancode::A, Scancode::Left][..] => GameKey::Left,
+            &[Scancode::D, Scancode::Right][..] => GameKey::Right,
+            &[Scancode::W, Scancode::Up][..] => GameKey::Up,
+            &[Scancode::S, Scancode::Down][..] => GameKey::Down,
+            &[Scancode::V][..] => GameKey::VsyncToggle,
+            &[Scancode::LShift, Scancode::RShift][..] => GameKey::RollModifier,
         };
-
 
     // Flatten
     let mut final_map = HashMap::new();
@@ -91,6 +120,7 @@ impl Game {
         ).collect();
 
         let mut game = Game {
+            key_map: init_key_map(),
             triangle_draw,
             triangles,
             roll_per_second: 0f32,
@@ -137,6 +167,11 @@ impl Game {
     pub fn keyboard_handler(&mut self) {
         let speed = SPIN_PER_SECOND;
 
+        if self.key_stack.normalize().is_pressed(GameKey::VsyncToggle) {
+            self.key_stack = self.key_stack.depress(GameKey::VsyncToggle);
+            self.toggle_vsync();
+        }
+
         if self.key_stack.normalize().is_pressed(GameKey::Up) {
             self.pitch_per_second = speed;
         } else if self.key_stack.normalize().is_pressed(GameKey::Down) {
@@ -175,8 +210,6 @@ impl Game {
     }
 
     pub fn input_handler(&mut self, event: sdl2::event::Event) {
-        let keymap = init_key_map();
-
         match event {
             sdl2::event::Event::MouseButtonDown {
                 ..
@@ -197,26 +230,18 @@ impl Game {
             }
             sdl2::event::Event::KeyDown {
                 scancode: Option::Some(code),
+                repeat,
                 ..
             } => {
-                if let Some(key) = keymap.get(&code) {
-                    self.key_stack = self.key_stack.press(*key)
+                if !repeat {
+                    self.key_stack = self.key_stack.press(*self.key_map.get(&code).unwrap_or(&GameKey::NoOp));
                 }
             }
             sdl2::event::Event::KeyUp {
                 scancode: Option::Some(code),
                 ..
             } => {
-                if let Some(key) = keymap.get(&code) {
-                    self.key_stack = self.key_stack.depress(*key);
-                }
-
-                match code {
-                    sdl2::keyboard::Scancode::V => {
-                        self.toggle_vsync()
-                    }
-                    _ => {}
-                }
+                self.key_stack = self.key_stack.depress(*self.key_map.get(&code).unwrap_or(&GameKey::NoOp));
             }
             _ => {}
         };

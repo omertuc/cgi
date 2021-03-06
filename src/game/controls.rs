@@ -1,49 +1,31 @@
-use core::convert::From;
 use std::collections::HashSet;
-
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum GameKey {
-    RollModifier,
-    Right,
-    Left,
-    Up,
-    Down,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-enum GameKeyGroup {
-    Horizontal,
-    Vertical,
-    Modifiers,
-}
-
-impl GameKey {
-    fn groups(self) -> HashSet<GameKeyGroup> {
-        match self {
-            GameKey::RollModifier => { [GameKeyGroup::Modifiers] }
-            GameKey::Right => { [GameKeyGroup::Horizontal] }
-            GameKey::Left => { [GameKeyGroup::Horizontal] }
-            GameKey::Up => { [GameKeyGroup::Vertical] }
-            GameKey::Down => { [GameKeyGroup::Vertical] }
-        }.iter().copied().collect()
-    }
-}
+use std::convert::From;
 
 pub type MouseMovement = (i32, i32);
 
+/// A KeyStack is a vector of keys that records the currently pressed keys, and the order in which
+/// they were pressed. Keys are of KeyType, which must implement the Groups trait so the groups
+/// to which that key belongs can be retrieved. Groups are used to create a normalized copy of the
+/// KeyStack, see the [`Self::normalize()`] implementation for more information.
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct KeyStack {
-    stack: Vec<GameKey>,
+pub struct KeyStack<KeyType: Copy + Clone + PartialEq + Groups<GroupType>, GroupType: Eq + std::hash::Hash + Clone> {
+    stack: Vec<KeyType>,
+    _marker: ::std::marker::PhantomData<GroupType>,
 }
 
-impl KeyStack {
-    pub fn new() -> KeyStack {
+pub trait Groups<GroupType> {
+    fn groups(&self) -> HashSet<GroupType>;
+}
+
+impl<KeyType: Copy + Clone + PartialEq + Groups<GroupType>, GroupType: Eq + std::hash::Hash + Clone> KeyStack<KeyType, GroupType> {
+    pub fn new() -> Self {
         KeyStack {
             stack: vec![],
+            _marker: ::std::marker::PhantomData,
         }
     }
 
-    pub fn press(&self, key: GameKey) -> KeyStack {
+    pub fn press(&self, key: KeyType) -> Self {
         if self.is_pressed(key) {
             self.clone()
         } else {
@@ -53,14 +35,17 @@ impl KeyStack {
         }
     }
 
-    pub fn depress(&self, key: GameKey) -> KeyStack {
-        self.stack.clone().into_iter().filter(
-            |other| &key != other).collect::<Vec<GameKey>>().into()
+    pub fn depress(&self, key: KeyType) -> Self {
+        self.clone().stack.into_iter().filter(
+            |other| &key != other).collect::<Vec<KeyType>>().clone().into()
     }
 
     /// Returns a normalized version of the KeyStack. Normalizing a KeyStack involves
-    /// keeping only 1 key from each group, with the ones lower in the stack removed.
-    pub fn normalize(&self) -> KeyStack {
+    /// keeping only 1 key from each group, with other keys from that same group lower in the stack
+    /// removed.
+    /// This is used when keys which cancel each are pressed at the same time - we want to ignore
+    /// all the keys that were pressed earlier, giving priority to those which were pressed later.
+    pub fn normalize(&self) -> KeyStack<KeyType, GroupType> {
         if self.stack.len() == 0 {
             return KeyStack::new();
         }
@@ -83,18 +68,19 @@ impl KeyStack {
             new.stack.push(current)
         }
 
-        new.stack.into_iter().rev().collect::<Vec<GameKey>>().into()
+        new.stack.into_iter().rev().collect::<Vec<KeyType>>().into()
     }
 
-    pub fn is_pressed(&self, key: GameKey) -> bool {
+    pub fn is_pressed(&self, key: KeyType) -> bool {
         self.stack.contains(&key)
     }
 }
 
-impl From<Vec<GameKey>> for KeyStack {
-    fn from(other_vec: Vec<GameKey>) -> KeyStack {
-        KeyStack {
-            stack: other_vec
+impl<KeyType: Copy + Clone + PartialEq + Groups<GroupType>, GroupType: Eq + std::hash::Hash + Clone> From<Vec<KeyType>> for KeyStack<KeyType, GroupType> {
+    fn from(other_vec: Vec<KeyType>) -> KeyStack<KeyType, GroupType> {
+        KeyStack::<KeyType, GroupType> {
+            stack: other_vec,
+            _marker: ::std::marker::PhantomData,
         }
     }
 }
