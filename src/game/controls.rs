@@ -8,7 +8,7 @@ pub type MouseMovement = (i32, i32);
 /// to which that key belongs can be retrieved. Groups are used to create a normalized copy of the
 /// KeyStack, see the [`Self::normalize()`] implementation for more information.
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct KeyStack<KeyType: Copy + Clone + PartialEq + Groups<GroupType>, GroupType: Eq + std::hash::Hash + Clone> {
+pub struct KeyStack<KeyType, GroupType> {
     stack: Vec<KeyType>,
     _marker: ::std::marker::PhantomData<GroupType>,
 }
@@ -76,7 +76,7 @@ impl<KeyType: Copy + Clone + PartialEq + Groups<GroupType>, GroupType: Eq + std:
     }
 }
 
-impl<KeyType: Copy + Clone + PartialEq + Groups<GroupType>, GroupType: Eq + std::hash::Hash + Clone> From<Vec<KeyType>> for KeyStack<KeyType, GroupType> {
+impl<KeyType, GroupType> From<Vec<KeyType>> for KeyStack<KeyType, GroupType> {
     fn from(other_vec: Vec<KeyType>) -> KeyStack<KeyType, GroupType> {
         KeyStack::<KeyType, GroupType> {
             stack: other_vec,
