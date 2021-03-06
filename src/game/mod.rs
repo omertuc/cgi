@@ -1,8 +1,6 @@
-use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 use std::f32::consts::TAU;
 
-use nalgebra::DimAdd;
 use sdl2::keyboard::Scancode;
 
 use controls::{GameKey, KeyStack, MouseMovement};
@@ -107,7 +105,7 @@ impl Game {
             mouse_down: false,
         };
 
-        game.disable_vsync();
+        game.enable_vsync();
 
         Ok(game)
     }
@@ -211,7 +209,7 @@ impl Game {
             } => {
                 if let Some(key) = keymap.get(&code) {
                     self.key_stack = self.key_stack.depress(*key);
-                e
+                }
 
                 match code {
                     sdl2::keyboard::Scancode::V => {
