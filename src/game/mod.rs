@@ -6,9 +6,9 @@ use sdl2::keyboard::Scancode;
 use controls::{KeyStack, MouseMovement};
 use time::GameTime;
 
+use crate::game::controls::Groups;
 use crate::resources::Resources;
 use crate::triangle;
-use crate::game::controls::Groups;
 
 mod controls;
 mod time;
@@ -37,13 +37,13 @@ enum GameKeyGroup {
     Vertical,
 }
 
-impl Groups<GameKeyGroup> for GameKey{
+impl Groups<GameKeyGroup> for GameKey {
     fn groups(&self) -> HashSet<GameKeyGroup> {
-            match self {
-                GameKey::Right | GameKey::Left => [GameKeyGroup::Horizontal],
-                GameKey::Up | GameKey::Down => [GameKeyGroup::Vertical],
-                _ => { return HashSet::<GameKeyGroup>::new() }
-            }.iter().copied().collect()
+        match self {
+            GameKey::Right | GameKey::Left => [GameKeyGroup::Horizontal],
+            GameKey::Up | GameKey::Down => [GameKeyGroup::Vertical],
+            _ => { return HashSet::<GameKeyGroup>::new(); }
+        }.iter().copied().collect()
     }
 }
 

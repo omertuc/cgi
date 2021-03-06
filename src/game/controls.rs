@@ -4,7 +4,7 @@ use std::convert::From;
 pub type MouseMovement = (i32, i32);
 
 /// A KeyStack is a vector of keys that records the currently pressed keys, and the order in which
-/// they were pressed. Keys are of KeyType, which must implement the Groups trait so the groups
+/// they were pressed. Keys are of type KeyType, which must implement the Groups trait so the groups
 /// to which that key belongs can be retrieved. Groups are used to create a normalized copy of the
 /// KeyStack, see the [`Self::normalize()`] implementation for more information.
 #[derive(Debug, Clone, Eq, PartialEq)]
