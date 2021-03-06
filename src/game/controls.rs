@@ -54,8 +54,7 @@ impl<KeyType> KeyStack<KeyType> where
 
         let mut new = KeyStack::new();
 
-        for i in (0..self.stack.len()).rev() {
-            let current = self.stack[i];
+        for current in self.stack.iter().rev() {
             let groups = current.groups();
             if groups.intersection(&encountered_groups).count() != 0 {
                 continue;
@@ -65,7 +64,7 @@ impl<KeyType> KeyStack<KeyType> where
                 encountered_groups.insert(group);
             }
 
-            new.stack.push(current)
+            new.stack.push(*current)
         }
 
         new.stack.into_iter().rev().collect::<Vec<KeyType>>().into()
