@@ -50,7 +50,7 @@ impl<KeyType> KeyStack<KeyType> where
             return KeyStack::new();
         }
 
-        let mut encountered_groups = vec![].into_iter().collect();
+        let mut encountered_groups = HashSet::new();
 
         let mut new = KeyStack::new();
 
