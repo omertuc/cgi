@@ -8,22 +8,20 @@ pub type MouseMovement = (i32, i32);
 /// to which that key belongs can be retrieved. Groups are used to create a normalized copy of the
 /// KeyStack, see the [`Self::normalize()`] implementation for more information.
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct KeyStack<KeyType, GroupType> {
+pub struct KeyStack<KeyType> {
     stack: Vec<KeyType>,
-    _marker: ::std::marker::PhantomData<GroupType>,
 }
 
-pub trait Groups<GroupType> {
-    fn groups(&self) -> HashSet<GroupType>;
+pub trait Groups {
+    type GroupType: Eq + std::hash::Hash;
+    fn groups(&self) -> HashSet<Self::GroupType>;
 }
 
-impl<KeyType, GroupType> KeyStack<KeyType, GroupType> where
-    KeyType: Copy + PartialEq + Groups<GroupType>,
-    GroupType: Eq + std::hash::Hash + Clone {
+impl<KeyType> KeyStack<KeyType> where
+    KeyType: Copy + PartialEq + Groups {
     pub fn new() -> Self {
         KeyStack {
             stack: vec![],
-            _marker: ::std::marker::PhantomData,
         }
     }
 
@@ -47,7 +45,7 @@ impl<KeyType, GroupType> KeyStack<KeyType, GroupType> where
     /// removed.
     /// This is used when keys which cancel each are pressed at the same time - we want to ignore
     /// all the keys that were pressed earlier, giving priority to those which were pressed later.
-    pub fn normalize(&self) -> KeyStack<KeyType, GroupType> {
+    pub fn normalize(&self) -> KeyStack<KeyType> {
         if self.stack.len() == 0 {
             return KeyStack::new();
         }
@@ -78,11 +76,10 @@ impl<KeyType, GroupType> KeyStack<KeyType, GroupType> where
     }
 }
 
-impl<KeyType, GroupType> From<Vec<KeyType>> for KeyStack<KeyType, GroupType> {
-    fn from(other_vec: Vec<KeyType>) -> KeyStack<KeyType, GroupType> {
-        KeyStack::<KeyType, GroupType> {
+impl<KeyType> From<Vec<KeyType>> for KeyStack<KeyType> {
+    fn from(other_vec: Vec<KeyType>) -> KeyStack<KeyType> {
+        KeyStack::<KeyType> {
             stack: other_vec,
-            _marker: ::std::marker::PhantomData,
         }
     }
 }

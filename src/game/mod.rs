@@ -32,12 +32,13 @@ pub enum GameKey {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-enum GameKeyGroup {
+pub enum GameKeyGroup {
     Horizontal,
     Vertical,
 }
 
-impl Groups<GameKeyGroup> for GameKey {
+impl Groups for GameKey {
+    type GroupType = GameKeyGroup;
     fn groups(&self) -> HashSet<GameKeyGroup> {
         match self {
             GameKey::Right | GameKey::Left => [GameKeyGroup::Horizontal],
@@ -53,7 +54,7 @@ pub(crate) struct Game {
 
     // controls
     key_map: HashMap<Scancode, GameKey>,
-    key_stack: KeyStack<GameKey, GameKeyGroup>,
+    key_stack: KeyStack<GameKey>,
     mouse_down: bool,
 
     // movement
