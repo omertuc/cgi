@@ -18,7 +18,8 @@ pub trait Groups<GroupType> {
 }
 
 impl<KeyType, GroupType> KeyStack<KeyType, GroupType> where
-    KeyType: Copy + PartialEq + Groups<GroupType>, GroupType: Eq + std::hash::Hash + Clone {
+    KeyType: Copy + PartialEq + Groups<GroupType>,
+    GroupType: Eq + std::hash::Hash + Clone {
     pub fn new() -> Self {
         KeyStack {
             stack: vec![],
