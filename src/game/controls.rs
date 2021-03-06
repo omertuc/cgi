@@ -33,7 +33,7 @@ impl<KeyType, GroupType> KeyStack<KeyType, GroupType> where
         } else {
             let mut new = self.clone();
             new.stack.push(key);
-            new.into()
+            new
         }
     }
 
