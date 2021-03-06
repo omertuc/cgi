@@ -17,7 +17,7 @@ pub trait Groups<GroupType> {
     fn groups(&self) -> HashSet<GroupType>;
 }
 
-impl<KeyType: Copy + Clone + PartialEq + Groups<GroupType>, GroupType: Eq + std::hash::Hash + Clone> KeyStack<KeyType, GroupType> {
+impl<KeyType: Copy + PartialEq + Groups<GroupType>, GroupType: Eq + std::hash::Hash + Clone> KeyStack<KeyType, GroupType> {
     pub fn new() -> Self {
         KeyStack {
             stack: vec![],
