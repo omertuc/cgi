@@ -1,10 +1,10 @@
 use failure;
 use gl;
+use nalgebra::{Rotation, Translation, Vector3, Vector4};
 
 use crate::render_gl::data::f32_f32_f32_f32;
 use crate::render_gl::{self, buffer, data};
 use crate::resources::Resources;
-use nalgebra::{Rotation, Vector3, Vector4};
 
 pub type Location = (f32, f32, f32);
 
@@ -89,6 +89,30 @@ impl Triangle {
         cloned.pitch = 0f32;
 
         cloned
+    }
+
+    pub fn translated(self) -> Triangle {
+        let homogeneous_matrix = Translation::from(Vector3::new(
+            self.location.0,
+            self.location.1,
+            self.location.2,
+        ))
+        .to_homogeneous();
+
+        let mut cloned = self.clone();
+
+        cloned.a.pos = (&homogeneous_matrix * Vector4::from(self.a.pos)).into();
+        cloned.b.pos = (&homogeneous_matrix * Vector4::from(self.b.pos)).into();
+        cloned.c.pos = (&homogeneous_matrix * Vector4::from(self.c.pos)).into();
+        cloned.location = (0f32, 0f32, 0f32);
+
+        cloned
+    }
+
+    pub fn view_from(self, location: Location) -> Triangle {
+        let mut cloned = self.clone();
+        cloned.location = (-location.0, -location.1, -location.2);
+        cloned.translated()
     }
 
     pub fn add_roll(self, angle: f32) -> Triangle {

@@ -54,9 +54,17 @@ impl Groups for GameKey {
     }
 }
 
+mod camera {
+    struct Camera {
+
+    }
+}
+
 pub(crate) struct Game {
     triangle_draw: triangle::TrianglesDraw,
     triangles: Vec<triangle::Triangle>,
+
+    // camera
 
     // controls
     key_map: HashMap<Scancode, GameKey>,
@@ -136,6 +144,8 @@ impl Game {
                 .clone()
                 .into_iter()
                 .map(Triangle::rotated)
+                .map(Triangle::translated)
+                .map(|t| t.view_from(self.camera))
                 .flat_map(triangle::Triangle::vertices)
                 .collect(),
         );
