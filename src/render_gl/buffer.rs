@@ -1,6 +1,9 @@
 use gl;
 
-pub struct Buffer<B> where B: BufferType {
+pub struct Buffer<B>
+where
+    B: BufferType,
+{
     gl: gl::Gl,
     vbo: gl::types::GLuint,
     _marker: ::std::marker::PhantomData<B>,
@@ -26,7 +29,10 @@ impl BufferType for BufferTypeElementArray {
 
 pub type ElementArrayBuffer = Buffer<BufferTypeElementArray>;
 
-impl<B> Buffer<B> where B: BufferType {
+impl<B> Buffer<B>
+where
+    B: BufferType,
+{
     pub fn new(gl: &gl::Gl) -> Buffer<B> {
         let mut vbo: gl::types::GLuint = 0;
 
@@ -65,7 +71,10 @@ impl<B> Buffer<B> where B: BufferType {
     }
 }
 
-impl<B> Drop for Buffer<B> where B: BufferType {
+impl<B> Drop for Buffer<B>
+where
+    B: BufferType,
+{
     fn drop(&mut self) {
         unsafe {
             self.gl.DeleteBuffers(1, &mut self.vbo);

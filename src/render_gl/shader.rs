@@ -3,13 +3,17 @@ use std::ffi::{CStr, CString};
 
 use gl;
 
-use crate::resources::Resources;
 use crate::resources;
+use crate::resources::Resources;
 
 #[derive(Debug, Fail)]
 pub enum Error {
     #[fail(display = "Failed to load resource {}", name)]
-    ResourceLoad { name: String, #[cause] inner: resources::Error },
+    ResourceLoad {
+        name: String,
+        #[cause]
+        inner: resources::Error,
+    },
     #[fail(display = "Cannot determine shader type for resource {}", name)]
     CannotDetermineShaderTypeForResource { name: String },
     #[fail(display = "Failed to compile shader {}: {}", name, message)]
@@ -25,18 +29,19 @@ pub struct Shader {
 
 impl Shader {
     pub fn from_res(gl: &gl::Gl, res: &Resources, name: &str) -> Result<Shader, Error> {
-        const POSSIBLE_EXT: [(&str, gl::types::GLenum); 2] = [
-            (".vert", gl::VERTEX_SHADER),
-            (".frag", gl::FRAGMENT_SHADER),
-        ];
+        const POSSIBLE_EXT: [(&str, gl::types::GLenum); 2] =
+            [(".vert", gl::VERTEX_SHADER), (".frag", gl::FRAGMENT_SHADER)];
 
-        let shader_kind = POSSIBLE_EXT.iter().
-            find(|&&(file_extension, _)| name.ends_with(file_extension))
+        let shader_kind = POSSIBLE_EXT
+            .iter()
+            .find(|&&(file_extension, _)| name.ends_with(file_extension))
             .map(|&(_, kind)| kind)
-            .ok_or_else(|| Error::CannotDetermineShaderTypeForResource {name: name.into()} )?;
+            .ok_or_else(|| Error::CannotDetermineShaderTypeForResource { name: name.into() })?;
 
-        let source = res.load_cstring(name)
-            .map_err(|e| Error::ResourceLoad {name: name.into(), inner: e})?;
+        let source = res.load_cstring(name).map_err(|e| Error::ResourceLoad {
+            name: name.into(),
+            inner: e,
+        })?;
 
         Shader::from_source(gl, &source, shader_kind).map_err(|message| Error::CompileError {
             name: name.into(),
@@ -44,11 +49,7 @@ impl Shader {
         })
     }
 
-    fn from_source(
-        gl: &gl::Gl,
-        source: &CStr,
-        kind: gl::types::GLuint,
-    ) -> Result<Shader, String> {
+    fn from_source(gl: &gl::Gl, source: &CStr, kind: gl::types::GLuint) -> Result<Shader, String> {
         let id = shader_from_source(&gl, source, kind)?;
         Ok(Shader { gl: gl.clone(), id })
     }
@@ -66,12 +67,9 @@ impl Shader {
     }
 }
 
-
 impl Drop for Shader {
     fn drop(&mut self) {
-        unsafe {
-            self.gl.DeleteShader(self.id)
-        }
+        unsafe { self.gl.DeleteShader(self.id) }
     }
 }
 
@@ -82,15 +80,11 @@ pub struct Program {
 
 impl Program {
     pub fn from_res(gl: &gl::Gl, res: &Resources, name: &str) -> Result<Program, Error> {
-        const POSSIBLE_EXT: [&str; 2] = [
-            ".vert",
-            ".frag",
-        ];
+        const POSSIBLE_EXT: [&str; 2] = [".vert", ".frag"];
 
-        let shaders = POSSIBLE_EXT.iter()
-            .map(|file_extension| {
-                Shader::from_res(gl, res, &format!("{}{}", name, file_extension))
-            })
+        let shaders = POSSIBLE_EXT
+            .iter()
+            .map(|file_extension| Shader::from_res(gl, res, &format!("{}{}", name, file_extension)))
             .collect::<Result<Vec<Shader>, Error>>()?;
 
         Program::from_shaders(gl, &shaders[..]).map_err(|message| Error::LinkError {
@@ -103,10 +97,14 @@ impl Program {
         let program_id = unsafe { gl.CreateProgram() };
 
         for shader in shaders {
-            unsafe { gl.AttachShader(program_id, shader.id()); }
+            unsafe {
+                gl.AttachShader(program_id, shader.id());
+            }
         }
 
-        unsafe { gl.LinkProgram(program_id); }
+        unsafe {
+            gl.LinkProgram(program_id);
+        }
 
         let mut success: gl::types::GLint = 1;
         unsafe {
@@ -135,10 +133,15 @@ impl Program {
         }
 
         for shader in shaders {
-            unsafe { gl.DetachShader(program_id, shader.id()); }
+            unsafe {
+                gl.DetachShader(program_id, shader.id());
+            }
         }
 
-        Ok(Program { gl: gl.clone(), id: program_id })
+        Ok(Program {
+            gl: gl.clone(),
+            id: program_id,
+        })
     }
 
     pub fn id(&self) -> gl::types::GLuint {
@@ -154,15 +157,15 @@ impl Program {
 
 impl Drop for Program {
     fn drop(&mut self) {
-        unsafe {
-            self.gl.DeleteProgram(self.id)
-        }
+        unsafe { self.gl.DeleteProgram(self.id) }
     }
 }
 
-fn shader_from_source(gl: &gl::Gl,
-                      source: &CStr,
-                      kind: gl::types::GLuint) -> Result<gl::types::GLuint, String> {
+fn shader_from_source(
+    gl: &gl::Gl,
+    source: &CStr,
+    kind: gl::types::GLuint,
+) -> Result<gl::types::GLuint, String> {
     let id = unsafe { gl.CreateShader(kind) };
 
     unsafe {

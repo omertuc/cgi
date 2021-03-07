@@ -12,7 +12,10 @@ fn main() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
-    print!("Running build script manifest dir {:?} out dir {:?}", manifest_dir, out_dir);
+    print!(
+        "Running build script manifest dir {:?} out dir {:?}",
+        manifest_dir, out_dir
+    );
 
     // locate executable path even if the project is in workspace
 
@@ -56,7 +59,8 @@ fn copy(from: &Path, to: &Path) {
             if entry.file_type().is_dir() {
                 DirBuilder::new()
                     .recursive(true)
-                    .create(target_path).expect("failed to create target dir");
+                    .create(target_path)
+                    .expect("failed to create target dir");
             } else {
                 fs::copy(entry.path(), &target_path).expect("failed to copy");
             }

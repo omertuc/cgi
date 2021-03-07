@@ -17,12 +17,12 @@ pub trait Groups {
     fn groups(&self) -> HashSet<Self::GroupType>;
 }
 
-impl<KeyType> KeyStack<KeyType> where
-    KeyType: Copy + PartialEq + Groups {
+impl<KeyType> KeyStack<KeyType>
+where
+    KeyType: Copy + PartialEq + Groups,
+{
     pub fn new() -> Self {
-        KeyStack {
-            stack: vec![],
-        }
+        KeyStack { stack: vec![] }
     }
 
     pub fn press(&self, key: KeyType) -> Self {
@@ -36,8 +36,13 @@ impl<KeyType> KeyStack<KeyType> where
     }
 
     pub fn depress(&self, key: KeyType) -> Self {
-        self.clone().stack.into_iter().filter(
-            |other| &key != other).collect::<Vec<KeyType>>().clone().into()
+        self.clone()
+            .stack
+            .into_iter()
+            .filter(|other| &key != other)
+            .collect::<Vec<KeyType>>()
+            .clone()
+            .into()
     }
 
     /// Returns a normalized version of the KeyStack. Normalizing a KeyStack involves
@@ -56,6 +61,7 @@ impl<KeyType> KeyStack<KeyType> where
 
         for current in self.stack.iter().rev() {
             let groups = current.groups();
+
             if groups.intersection(&encountered_groups).count() != 0 {
                 continue;
             }
@@ -75,8 +81,6 @@ impl<KeyType> KeyStack<KeyType> where
 
 impl<KeyType> From<Vec<KeyType>> for KeyStack<KeyType> {
     fn from(other_vec: Vec<KeyType>) -> KeyStack<KeyType> {
-        KeyStack::<KeyType> {
-            stack: other_vec,
-        }
+        KeyStack::<KeyType> { stack: other_vec }
     }
 }

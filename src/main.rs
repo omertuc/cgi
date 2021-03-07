@@ -12,12 +12,11 @@ use nalgebra as na;
 
 use resources::Resources;
 
+mod debug;
+mod game;
 pub mod render_gl;
 pub mod resources;
 mod triangle;
-mod debug;
-mod game;
-
 
 fn main() {
     if let Err(e) = run() {
@@ -26,7 +25,6 @@ fn main() {
 }
 
 const TICK_LENGTH_US: u64 = 100;
-
 
 fn run() -> Result<(), failure::Error> {
     let res = Resources::from_relative_exe_path(Path::new("assets"))?;
@@ -43,12 +41,14 @@ fn run() -> Result<(), failure::Error> {
         .window("Game", 2560, 1440)
         .opengl()
         .resizable()
-        .build().map_err(err_msg)?;
+        .build()
+        .map_err(err_msg)?;
 
     let _gl_context = window.gl_create_context().map_err(err_msg)?;
 
-    let gl = gl::Gl::load_with(|s| video_subsystem.gl_get_proc_address(s)
-        as *const std::os::raw::c_void);
+    let gl = gl::Gl::load_with(|s| {
+        video_subsystem.gl_get_proc_address(s) as *const std::os::raw::c_void
+    });
 
     unsafe {
         gl.Enable(gl::BLEND);
@@ -58,8 +58,7 @@ fn run() -> Result<(), failure::Error> {
     let mut viewport = render_gl::Viewport::for_window(900, 700);
     viewport.set_used(&gl);
 
-    let color_buffer = render_gl::ColorBuffer::from_color(
-        na::Vector3::new(0.04, 0.05, 0.04));
+    let color_buffer = render_gl::ColorBuffer::from_color(na::Vector3::new(0.04, 0.05, 0.04));
 
     color_buffer.set_used(&gl);
     color_buffer.clear(&gl);
@@ -71,11 +70,14 @@ fn run() -> Result<(), failure::Error> {
     sdl.mouse().show_cursor(false);
     sdl.mouse().set_relative_mouse_mode(true);
 
-    let mut game = game::Game::new(res, &gl,
-                                   timer_subsystem.performance_counter(),
-                                   timer_subsystem.performance_frequency(),
-                                   TICK_LENGTH_US,
-                                   video_subsystem)?;
+    let mut game = game::Game::new(
+        res,
+        &gl,
+        timer_subsystem.performance_counter(),
+        timer_subsystem.performance_frequency(),
+        TICK_LENGTH_US,
+        video_subsystem,
+    )?;
 
     'main: loop {
         for event in event_pump.poll_iter() {

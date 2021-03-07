@@ -9,6 +9,7 @@ use time::GameTime;
 use crate::game::controls::Groups;
 use crate::resources::Resources;
 use crate::triangle;
+use crate::triangle::{Triangle, Vertex};
 
 mod controls;
 mod time;
@@ -43,8 +44,13 @@ impl Groups for GameKey {
         match self {
             GameKey::Right | GameKey::Left => [GameKeyGroup::Horizontal],
             GameKey::Up | GameKey::Down => [GameKeyGroup::Vertical],
-            _ => { return HashSet::<GameKeyGroup>::new(); }
-        }.iter().copied().collect()
+            _ => {
+                return HashSet::<GameKeyGroup>::new();
+            }
+        }
+        .iter()
+        .copied()
+        .collect()
     }
 }
 
@@ -73,13 +79,13 @@ pub(crate) struct Game {
 
 pub fn init_key_map() -> HashMap<Scancode, GameKey> {
     let game_keys = hashmap! {
-            &[Scancode::A, Scancode::Left][..] => GameKey::Left,
-            &[Scancode::D, Scancode::Right][..] => GameKey::Right,
-            &[Scancode::W, Scancode::Up][..] => GameKey::Up,
-            &[Scancode::S, Scancode::Down][..] => GameKey::Down,
-            &[Scancode::V][..] => GameKey::VsyncToggle,
-            &[Scancode::LShift, Scancode::RShift][..] => GameKey::RollModifier,
-        };
+        &[Scancode::A, Scancode::Left][..] => GameKey::Left,
+        &[Scancode::D, Scancode::Right][..] => GameKey::Right,
+        &[Scancode::W, Scancode::Up][..] => GameKey::Up,
+        &[Scancode::S, Scancode::Down][..] => GameKey::Down,
+        &[Scancode::V][..] => GameKey::VsyncToggle,
+        &[Scancode::LShift, Scancode::RShift][..] => GameKey::RollModifier,
+    };
 
     // Flatten
     let mut final_map = HashMap::new();
@@ -94,31 +100,81 @@ pub fn init_key_map() -> HashMap<Scancode, GameKey> {
 
 impl Game {
     pub(crate) fn process(&mut self, timer: u64) {
-        let ticks = self.game_time.update_ticks(timer);
+        let second_fraction =
+            (self.game_time.update_ticks(timer) as f32) * self.game_time.tick_second_ratio;
 
-        let pitch = self.pitch_per_second * self.game_time.tick_second_ratio;
-        let yaw = self.yaw_per_second * self.game_time.tick_second_ratio;
-        let roll = self.roll_per_second * self.game_time.tick_second_ratio;
+        let pitch = self.pitch_per_second * second_fraction;
+        let yaw = self.yaw_per_second * second_fraction;
+        let roll = self.roll_per_second * second_fraction;
 
-        self.triangles.iter_mut().for_each(|t| t.add_pitch(pitch * ticks as f32));
-        self.triangles.iter_mut().for_each(|t| t.add_yaw(yaw * ticks as f32));
-        self.triangles.iter_mut().for_each(|t| t.add_roll(roll * ticks as f32));
+        self.triangles = self
+            .triangles
+            .clone()
+            .into_iter()
+            .map(|t| t.add_pitch(pitch))
+            .collect();
+
+        self.triangles = self
+            .triangles
+            .clone()
+            .into_iter()
+            .map(|t| t.add_yaw(yaw))
+            .collect();
+
+        self.triangles = self
+            .triangles
+            .clone()
+            .into_iter()
+            .map(|t| t.add_roll(roll))
+            .collect();
     }
 
     pub(crate) fn draw(&self, gl: &gl::Gl) {
-        self.triangle_draw.draw(&gl, self.triangles.iter().flat_map(triangle::Triangle::vertices).collect());
+        self.triangle_draw.draw(
+            &gl,
+            self.triangles
+                .clone()
+                .into_iter()
+                .map(Triangle::rotated)
+                .flat_map(triangle::Triangle::vertices)
+                .collect(),
+        );
     }
 
-    pub fn new(res: Resources, gl: &gl::Gl, initial_time: u64, timer_frequency: u64,
-               tick_length_us: u64, video_subsystem: sdl2::VideoSubsystem) -> Result<Game, failure::Error> {
+    pub fn new(
+        res: Resources,
+        gl: &gl::Gl,
+        initial_time: u64,
+        timer_frequency: u64,
+        tick_length_us: u64,
+        video_subsystem: sdl2::VideoSubsystem,
+    ) -> Result<Game, failure::Error> {
         let triangle_draw = triangle::TrianglesDraw::new(&res, &gl)?;
         let triangle_count = 1;
 
-        let triangles: Vec<triangle::Triangle> = (0..triangle_count).into_iter().map(
-            |triangle_index| (triangle_index as f32) * (TAU / triangle_count as f32)
-        ).map(
-            |angle| triangle::Triangle::new(angle, angle, angle)
-        ).collect();
+        let location = (0f32, 0f32, 0f32);
+
+        let triangles: Vec<triangle::Triangle> = (0..triangle_count)
+            .into_iter()
+            .map(|triangle_index| (triangle_index as f32) * (TAU / triangle_count as f32))
+            .map(|angle| {
+                triangle::Triangle::new(
+                    Vertex {
+                        pos: (0.5, -0.5, 0.0).into(),
+                        clr: (0.2, 0.2, 0.4, 0.3).into(),
+                    },
+                    Vertex {
+                        pos: (-0.5, -0.5, 0.0).into(),
+                        clr: (0.1, 0.1, 0.3, 0.3).into(),
+                    },
+                    Vertex {
+                        pos: (0.0, 0.5, 0.0).into(),
+                        clr: (0.3, 0.3, 0.5, 0.3).into(),
+                    },
+                    location,
+                )
+            })
+            .collect();
 
         let mut game = Game {
             key_map: init_key_map(),
@@ -128,9 +184,7 @@ impl Game {
             yaw_per_second: 0f32,
             pitch_per_second: 0f32,
             video_subsystem,
-            settings: Settings {
-                vsync: false,
-            },
+            settings: Settings { vsync: false },
             game_time: GameTime::new(timer_frequency, tick_length_us, initial_time),
             key_stack: KeyStack::new(),
             mouse_down: false,
@@ -142,7 +196,10 @@ impl Game {
     }
 
     pub fn enable_vsync(&mut self) {
-        if let Ok(_) = self.video_subsystem.gl_set_swap_interval(sdl2::video::SwapInterval::VSync) {
+        if let Ok(_) = self
+            .video_subsystem
+            .gl_set_swap_interval(sdl2::video::SwapInterval::VSync)
+        {
             self.settings.vsync = true;
         } else {
             println!("Failed to enable vsync")
@@ -150,7 +207,10 @@ impl Game {
     }
 
     pub fn disable_vsync(&mut self) {
-        if let Ok(_) = self.video_subsystem.gl_set_swap_interval(sdl2::video::SwapInterval::Immediate) {
+        if let Ok(_) = self
+            .video_subsystem
+            .gl_set_swap_interval(sdl2::video::SwapInterval::Immediate)
+        {
             self.settings.vsync = false;
         } else {
             println!("Failed to disable vsync")
@@ -202,47 +262,52 @@ impl Game {
     pub fn mouse_moved(&mut self, movement: MouseMovement) {
         if self.mouse_down {
             if self.key_stack.normalize().is_pressed(GameKey::RollModifier) {
-                self.triangles.iter_mut().for_each(|t| t.add_roll(SPIN_PER_MOUSE_PIXEL * movement.0 as f32));
+                self.triangles = self
+                    .triangles
+                    .clone()
+                    .into_iter()
+                    .map(|t| t.add_roll(SPIN_PER_MOUSE_PIXEL * movement.0 as f32))
+                    .collect();
             } else {
-                self.triangles.iter_mut().for_each(|t| t.add_yaw(SPIN_PER_MOUSE_PIXEL * movement.0 as f32));
+                self.triangles = self
+                    .triangles
+                    .clone()
+                    .into_iter()
+                    .map(|t| t.add_yaw(SPIN_PER_MOUSE_PIXEL * movement.0 as f32))
+                    .collect();
             }
-            self.triangles.iter_mut().for_each(|t| t.add_pitch(SPIN_PER_MOUSE_PIXEL * movement.1 as f32));
+            self.triangles = self
+                .triangles
+                .clone()
+                .into_iter()
+                .map(|t| t.add_pitch(SPIN_PER_MOUSE_PIXEL * movement.0 as f32))
+                .collect();
         }
     }
 
     pub fn input_handler(&mut self, event: sdl2::event::Event) {
         match event {
-            sdl2::event::Event::MouseButtonDown {
-                ..
-            } => {
-                self.mouse_down = true
-            }
-            sdl2::event::Event::MouseButtonUp {
-                ..
-            } => {
-                self.mouse_down = false
-            }
-            sdl2::event::Event::MouseMotion {
-                xrel,
-                yrel,
-                ..
-            } => {
-                self.mouse_moved((xrel, yrel))
-            }
+            sdl2::event::Event::MouseButtonDown { .. } => self.mouse_down = true,
+            sdl2::event::Event::MouseButtonUp { .. } => self.mouse_down = false,
+            sdl2::event::Event::MouseMotion { xrel, yrel, .. } => self.mouse_moved((xrel, yrel)),
             sdl2::event::Event::KeyDown {
                 scancode: Option::Some(code),
                 repeat,
                 ..
             } => {
                 if !repeat {
-                    self.key_stack = self.key_stack.press(*self.key_map.get(&code).unwrap_or(&GameKey::NoOp));
+                    self.key_stack = self
+                        .key_stack
+                        .press(*self.key_map.get(&code).unwrap_or(&GameKey::NoOp));
                 }
             }
             sdl2::event::Event::KeyUp {
                 scancode: Option::Some(code),
                 ..
             } => {
-                self.key_stack = self.key_stack.depress(*self.key_map.get(&code).unwrap_or(&GameKey::NoOp));
+                self.key_stack = self
+                    .key_stack
+                    .depress(*self.key_map.get(&code).unwrap_or(&GameKey::NoOp));
             }
             _ => {}
         };
