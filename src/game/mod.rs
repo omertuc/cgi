@@ -6,15 +6,18 @@ use sdl2::keyboard::Scancode;
 use controls::{KeyStack, MouseMovement};
 use time::GameTime;
 
+use crate::game::camera::Camera;
 use crate::game::controls::Groups;
 use crate::resources::Resources;
 use crate::triangle;
 use crate::triangle::{Triangle, Vertex};
 
+mod camera;
 mod controls;
 mod time;
 
 const SPIN_PER_SECOND: f32 = TAU / 2f32;
+const MOVEMENT_PER_SECOND: f32 = TAU / 2f32;
 const SPIN_PER_MOUSE_PIXEL: f32 = TAU / 300f32;
 
 struct Settings {
@@ -25,6 +28,7 @@ struct Settings {
 pub enum GameKey {
     NoOp,
     RollModifier,
+    CameraModifier,
     Right,
     Left,
     Up,
@@ -54,27 +58,54 @@ impl Groups for GameKey {
     }
 }
 
-mod camera {
-    struct Camera {
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Location {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
 
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct Orientation {
+    pub pitch: f32,
+    pub roll: f32,
+    pub yaw: f32,
+}
+
+impl From<(f32, f32, f32)> for Location {
+    fn from(tuple: (f32, f32, f32)) -> Self {
+        Location {
+            x: tuple.0,
+            y: tuple.1,
+            z: tuple.2,
+        }
     }
 }
+
+type KeyMap = HashMap<Scancode, GameKey>;
+type GameKeyStack = KeyStack<GameKey>;
 
 pub(crate) struct Game {
     triangle_draw: triangle::TrianglesDraw,
     triangles: Vec<triangle::Triangle>,
 
     // camera
+    camera: Camera,
 
     // controls
-    key_map: HashMap<Scancode, GameKey>,
-    key_stack: KeyStack<GameKey>,
+    key_map: KeyMap,
+    key_stack: GameKeyStack,
     mouse_down: bool,
 
-    // movement
+    // rotation
     roll_per_second: f32,
     yaw_per_second: f32,
     pitch_per_second: f32,
+
+    // movement
+    x_per_second: f32,
+    y_per_second: f32,
+    z_per_second: f32,
 
     // sdl
     video_subsystem: sdl2::VideoSubsystem,
@@ -93,6 +124,7 @@ pub fn init_key_map() -> HashMap<Scancode, GameKey> {
         &[Scancode::S, Scancode::Down][..] => GameKey::Down,
         &[Scancode::V][..] => GameKey::VsyncToggle,
         &[Scancode::LShift, Scancode::RShift][..] => GameKey::RollModifier,
+        &[Scancode::LCtrl, Scancode::RCtrl][..] => GameKey::CameraModifier,
     };
 
     // Flatten
@@ -111,33 +143,25 @@ impl Game {
         let second_fraction =
             (self.game_time.update_ticks(timer) as f32) * self.game_time.tick_second_ratio;
 
-        let pitch = self.pitch_per_second * second_fraction;
-        let yaw = self.yaw_per_second * second_fraction;
-        let roll = self.roll_per_second * second_fraction;
+        let extra_pitch = self.pitch_per_second * second_fraction;
+        let extra_yaw = self.yaw_per_second * second_fraction;
+        let extra_roll = self.roll_per_second * second_fraction;
 
-        self.triangles = self
-            .triangles
-            .clone()
-            .into_iter()
-            .map(|t| t.add_pitch(pitch))
-            .collect();
+        let extra_x = self.x_per_second * second_fraction;
+        let extra_y = self.y_per_second * second_fraction;
+        let extra_z = self.z_per_second * second_fraction;
 
-        self.triangles = self
-            .triangles
-            .clone()
-            .into_iter()
-            .map(|t| t.add_yaw(yaw))
-            .collect();
+        self.camera.location.x += extra_x;
+        self.camera.location.y += extra_y;
+        self.camera.location.z += extra_z;
 
-        self.triangles = self
-            .triangles
-            .clone()
-            .into_iter()
-            .map(|t| t.add_roll(roll))
-            .collect();
+        self.camera.orientation.pitch += extra_pitch;
+        self.camera.orientation.yaw += extra_yaw;
+        self.camera.orientation.roll += extra_roll;
     }
 
     pub(crate) fn draw(&self, gl: &gl::Gl) {
+        println!("{:#?}", self.triangles[0]);
         self.triangle_draw.draw(
             &gl,
             self.triangles
@@ -145,7 +169,7 @@ impl Game {
                 .into_iter()
                 .map(Triangle::rotated)
                 .map(Triangle::translated)
-                .map(|t| t.view_from(self.camera))
+                .map(|t| t.view_from(self.camera.location, self.camera.orientation))
                 .flat_map(triangle::Triangle::vertices)
                 .collect(),
         );
@@ -167,7 +191,7 @@ impl Game {
         let triangles: Vec<triangle::Triangle> = (0..triangle_count)
             .into_iter()
             .map(|triangle_index| (triangle_index as f32) * (TAU / triangle_count as f32))
-            .map(|angle| {
+            .map(|_angle| {
                 triangle::Triangle::new(
                     Vertex {
                         pos: (0.5, -0.5, 0.0).into(),
@@ -181,7 +205,7 @@ impl Game {
                         pos: (0.0, 0.5, 0.0).into(),
                         clr: (0.3, 0.3, 0.5, 0.3).into(),
                     },
-                    location,
+                    location.into(),
                 )
             })
             .collect();
@@ -190,10 +214,32 @@ impl Game {
             key_map: init_key_map(),
             triangle_draw,
             triangles,
+
+            // Default rotation speed
             roll_per_second: 0f32,
             yaw_per_second: 0f32,
             pitch_per_second: 0f32,
+
+            // Default movement speed
+            x_per_second: 0f32,
+            y_per_second: 0f32,
+            z_per_second: 0f32,
+
+            camera: Camera {
+                location: Location {
+                    x: 0f32,
+                    y: 0f32,
+                    z: 0f32,
+                },
+                orientation: Orientation {
+                    pitch: 0f32,
+                    roll: 0f32,
+                    yaw: 0f32,
+                },
+            },
+
             video_subsystem,
+
             settings: Settings { vsync: false },
             game_time: GameTime::new(timer_frequency, tick_length_us, initial_time),
             key_stack: KeyStack::new(),
@@ -235,30 +281,45 @@ impl Game {
         }
     }
 
-    pub fn keyboard_handler(&mut self) {
-        let speed = SPIN_PER_SECOND;
+    pub fn handle_movement(&mut self, normalized: GameKeyStack) {
+        let speed = MOVEMENT_PER_SECOND;
 
-        if self.key_stack.normalize().is_pressed(GameKey::VsyncToggle) {
-            self.key_stack = self.key_stack.depress(GameKey::VsyncToggle);
-            self.toggle_vsync();
+        if normalized.is_pressed(GameKey::Up) {
+            self.z_per_second = speed;
+        } else if normalized.is_pressed(GameKey::Down) {
+            self.z_per_second = -speed;
+        } else {
+            self.z_per_second = 0f32;
         }
 
-        if self.key_stack.normalize().is_pressed(GameKey::Up) {
+        if normalized.is_pressed(GameKey::Right) {
+            self.x_per_second = speed;
+        } else if normalized.is_pressed(GameKey::Left) {
+            self.x_per_second = -speed;
+        } else {
+            self.x_per_second = 0f32;
+        }
+    }
+
+    pub fn handle_rotation(&mut self, normalized: GameKeyStack) {
+        let speed = SPIN_PER_SECOND;
+
+        if normalized.is_pressed(GameKey::Up) {
             self.pitch_per_second = speed;
-        } else if self.key_stack.normalize().is_pressed(GameKey::Down) {
+        } else if normalized.is_pressed(GameKey::Down) {
             self.pitch_per_second = -speed;
         } else {
             self.pitch_per_second = 0f32;
         }
 
-        if self.key_stack.normalize().is_pressed(GameKey::Right) {
-            if self.key_stack.normalize().is_pressed(GameKey::RollModifier) {
+        if normalized.is_pressed(GameKey::Right) {
+            if normalized.is_pressed(GameKey::RollModifier) {
                 self.roll_per_second = speed;
             } else {
                 self.yaw_per_second = speed;
             }
-        } else if self.key_stack.normalize().is_pressed(GameKey::Left) {
-            if self.key_stack.normalize().is_pressed(GameKey::RollModifier) {
+        } else if normalized.is_pressed(GameKey::Left) {
+            if normalized.is_pressed(GameKey::RollModifier) {
                 self.roll_per_second = -speed;
             } else {
                 self.yaw_per_second = -speed;
@@ -269,29 +330,32 @@ impl Game {
         }
     }
 
+    pub fn keyboard_handler(&mut self) {
+        let normalized = self.key_stack.normalize();
+
+        if normalized.is_pressed(GameKey::VsyncToggle) {
+            self.key_stack = self.key_stack.depress(GameKey::VsyncToggle);
+            self.toggle_vsync();
+        }
+
+        if normalized.is_pressed(GameKey::CameraModifier) {
+            self.handle_movement(normalized);
+        } else {
+            self.handle_rotation(normalized);
+        }
+    }
+
     pub fn mouse_moved(&mut self, movement: MouseMovement) {
         if self.mouse_down {
+            let x_diff = SPIN_PER_MOUSE_PIXEL * (movement.0 as f32);
+            let y_diff = SPIN_PER_MOUSE_PIXEL * (movement.1 as f32);
             if self.key_stack.normalize().is_pressed(GameKey::RollModifier) {
-                self.triangles = self
-                    .triangles
-                    .clone()
-                    .into_iter()
-                    .map(|t| t.add_roll(SPIN_PER_MOUSE_PIXEL * movement.0 as f32))
-                    .collect();
+                self.camera.orientation.roll += x_diff;
             } else {
-                self.triangles = self
-                    .triangles
-                    .clone()
-                    .into_iter()
-                    .map(|t| t.add_yaw(SPIN_PER_MOUSE_PIXEL * movement.0 as f32))
-                    .collect();
+                self.camera.orientation.yaw += x_diff;
             }
-            self.triangles = self
-                .triangles
-                .clone()
-                .into_iter()
-                .map(|t| t.add_pitch(SPIN_PER_MOUSE_PIXEL * movement.0 as f32))
-                .collect();
+
+            self.camera.orientation.pitch += y_diff;
         }
     }
 

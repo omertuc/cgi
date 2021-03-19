@@ -5,8 +5,7 @@ use nalgebra::{Rotation, Translation, Vector3, Vector4};
 use crate::render_gl::data::f32_f32_f32_f32;
 use crate::render_gl::{self, buffer, data};
 use crate::resources::Resources;
-
-pub type Location = (f32, f32, f32);
+use crate::game::{Location, Orientation};
 
 #[derive(VertexAttribPointers, Copy, Clone, Debug)]
 #[repr(C, packed)]
@@ -51,8 +50,8 @@ impl TrianglesDraw {
     }
 }
 
-#[derive(Clone)]
-pub struct Triangle {
+#[derive(Debug, Clone)]
+pub(crate) struct Triangle {
     a: Vertex,
     b: Vertex,
     c: Vertex,
@@ -93,9 +92,9 @@ impl Triangle {
 
     pub fn translated(self) -> Triangle {
         let homogeneous_matrix = Translation::from(Vector3::new(
-            self.location.0,
-            self.location.1,
-            self.location.2,
+            self.location.x,
+            self.location.y,
+            self.location.z,
         ))
         .to_homogeneous();
 
@@ -104,33 +103,18 @@ impl Triangle {
         cloned.a.pos = (&homogeneous_matrix * Vector4::from(self.a.pos)).into();
         cloned.b.pos = (&homogeneous_matrix * Vector4::from(self.b.pos)).into();
         cloned.c.pos = (&homogeneous_matrix * Vector4::from(self.c.pos)).into();
-        cloned.location = (0f32, 0f32, 0f32);
+        cloned.location = (0f32, 0f32, 0f32).into();
 
         cloned
     }
 
-    pub fn view_from(self, location: Location) -> Triangle {
+    pub fn view_from(self, location: Location, orientation: Orientation) -> Triangle {
         let mut cloned = self.clone();
-        cloned.location = (-location.0, -location.1, -location.2);
-        cloned.translated()
-    }
-
-    pub fn add_roll(self, angle: f32) -> Triangle {
-        let mut cloned = self.clone();
-        cloned.roll += angle;
-        cloned
-    }
-
-    pub fn add_pitch(self, angle: f32) -> Triangle {
-        let mut cloned = self.clone();
-        cloned.pitch += angle;
-        cloned
-    }
-
-    pub fn add_yaw(self, angle: f32) -> Triangle {
-        let mut cloned = self.clone();
-        cloned.yaw += angle;
-        cloned
+        cloned.location = (-location.x, -location.y, -location.z).into();
+        cloned.pitch = -orientation.pitch;
+        cloned.roll = -orientation.roll;
+        cloned.yaw = -orientation.yaw;
+        cloned.translated().rotated()
     }
 
     pub fn vertices(self) -> Vec<Vertex> {
