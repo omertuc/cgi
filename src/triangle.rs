@@ -55,37 +55,35 @@ pub(crate) struct Triangle {
     a: Vertex,
     b: Vertex,
     c: Vertex,
-    roll: f32,
-    yaw: f32,
-    pitch: f32,
+    orientation: Orientation,
     location: Location,
 }
 
 impl Triangle {
-    pub fn new(a: Vertex, b: Vertex, c: Vertex, location: Location) -> Triangle {
+    pub fn new(a: Vertex, b: Vertex, c: Vertex, location: Location, orientation: Orientation) -> Triangle {
         Triangle {
             a,
             b,
             c,
-            roll: 0f32,
-            yaw: 0f32,
-            pitch: 0f32,
+            orientation,
             location,
         }
     }
 
     pub fn rotated(self) -> Triangle {
         let homogeneous_matrix =
-            Rotation::from_euler_angles(self.roll, self.yaw, self.pitch).to_homogeneous();
+            Rotation::from_euler_angles(self.orientation.roll, self.orientation.yaw, self.orientation.pitch).to_homogeneous();
 
         let mut cloned = self.clone();
 
         cloned.a.pos = (&homogeneous_matrix * Vector4::from(self.a.pos)).into();
         cloned.b.pos = (&homogeneous_matrix * Vector4::from(self.b.pos)).into();
         cloned.c.pos = (&homogeneous_matrix * Vector4::from(self.c.pos)).into();
-        cloned.roll = 0f32;
-        cloned.yaw = 0f32;
-        cloned.pitch = 0f32;
+        cloned.orientation = Orientation {
+            pitch: 0f32,
+            yaw: 0f32,
+            roll: 0f32,
+        };
 
         cloned
     }
@@ -111,9 +109,9 @@ impl Triangle {
     pub fn view_from(self, location: Location, orientation: Orientation) -> Triangle {
         let mut cloned = self.clone();
         cloned.location = (-location.x, -location.y, -location.z).into();
-        cloned.pitch = -orientation.pitch;
-        cloned.roll = -orientation.roll;
-        cloned.yaw = -orientation.yaw;
+        cloned.orientation.pitch = -orientation.pitch;
+        cloned.orientation.roll = -orientation.roll;
+        cloned.orientation.yaw = -orientation.yaw;
         cloned.translated().rotated()
     }
 

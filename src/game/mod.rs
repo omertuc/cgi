@@ -161,7 +161,7 @@ impl Game {
     }
 
     pub(crate) fn draw(&self, gl: &gl::Gl) {
-        println!("{:#?}", self.triangles[0]);
+        println!("{:#?}", self.camera);
         self.triangle_draw.draw(
             &gl,
             self.triangles
@@ -184,14 +184,14 @@ impl Game {
         video_subsystem: sdl2::VideoSubsystem,
     ) -> Result<Game, failure::Error> {
         let triangle_draw = triangle::TrianglesDraw::new(&res, &gl)?;
-        let triangle_count = 1;
+        let triangle_count = 200;
 
         let location = (0f32, 0f32, 0f32);
 
         let triangles: Vec<triangle::Triangle> = (0..triangle_count)
             .into_iter()
             .map(|triangle_index| (triangle_index as f32) * (TAU / triangle_count as f32))
-            .map(|_angle| {
+            .map(|angle| {
                 triangle::Triangle::new(
                     Vertex {
                         pos: (0.5, -0.5, 0.0).into(),
@@ -206,6 +206,11 @@ impl Game {
                         clr: (0.3, 0.3, 0.5, 0.3).into(),
                     },
                     location.into(),
+                    Orientation {
+                        pitch: angle,
+                        roll: angle,
+                        yaw: angle,
+                    }
                 )
             })
             .collect();
@@ -285,11 +290,11 @@ impl Game {
         let speed = MOVEMENT_PER_SECOND;
 
         if normalized.is_pressed(GameKey::Up) {
-            self.z_per_second = speed;
+            self.y_per_second = speed;
         } else if normalized.is_pressed(GameKey::Down) {
-            self.z_per_second = -speed;
+            self.y_per_second = -speed;
         } else {
-            self.z_per_second = 0f32;
+            self.y_per_second = 0f32;
         }
 
         if normalized.is_pressed(GameKey::Right) {
