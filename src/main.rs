@@ -1,4 +1,4 @@
-#![deny(warnings)]
+// #![deny(warnings)]
 
 #[macro_use]
 extern crate failure;
@@ -55,6 +55,7 @@ fn run() -> Result<(), failure::Error> {
 
     unsafe {
         gl.Enable(gl::BLEND);
+        gl.Enable(gl::DEPTH_TEST);
         gl.BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
     }
 
@@ -80,6 +81,7 @@ fn run() -> Result<(), failure::Error> {
         timer_subsystem.performance_frequency(),
         TICK_LENGTH_US,
         video_subsystem,
+        (viewport.w / viewport.h) as f32,
     )?;
 
     'main: loop {
@@ -92,6 +94,7 @@ fn run() -> Result<(), failure::Error> {
                 } => {
                     viewport.update_size(w, h);
                     viewport.set_used(&gl);
+                    game.set_aspect_ratio((w as f32 / h as f32) as f32);
                 }
                 _ => {
                     game.input_handler(event);

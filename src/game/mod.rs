@@ -27,6 +27,8 @@ struct Settings {
 }
 
 pub(crate) struct Game {
+    aspect: f32,
+
     triangle_draw: triangle::TrianglesDraw,
     cubes: Vec<cube::Cube>,
 
@@ -82,8 +84,10 @@ impl Game {
     }
 
     pub(crate) fn draw(&self, gl: &gl::Gl) {
+        dbg!(&self.camera);
         self.triangle_draw.draw(
             &gl,
+
             self.cubes
                 .iter()
                 .flat_map(|cube| cube.triangles.clone())
@@ -92,6 +96,7 @@ impl Game {
                 .map(Triangle::rotated)
                 .map(Triangle::translated)
                 .map(|t| t.view_from(self.camera.location, self.camera.orientation))
+                .map(|t| t.projected(self.aspect))
                 .flat_map(triangle::Triangle::vertices)
                 .collect(),
         );
@@ -104,28 +109,31 @@ impl Game {
         timer_frequency: u64,
         tick_length_us: u64,
         video_subsystem: sdl2::VideoSubsystem,
+        aspect: f32,
     ) -> Result<Game, failure::Error> {
         let triangle_draw = triangle::TrianglesDraw::new(&res, &gl)?;
 
         let orientation: Orientation = Orientation {
-            pitch: 0f32,
+            pitch: 1f32,
             roll: 0f32,
             yaw: 0f32,
         };
 
         let mut game = Game {
+            aspect,
+
             key_map: init_key_map(),
             triangle_draw,
             cubes: vec![
                 cube::Cube::new((0f32, 0f32, 0f32).into(), orientation),
-                cube::Cube::new((0f32, 0.5f32, 0f32).into(), orientation),
-                cube::Cube::new((0f32, -0.5f32, 0f32).into(), orientation),
-                cube::Cube::new((0.5f32, 0f32, 0f32).into(), orientation),
-                cube::Cube::new((0.5f32, 0.5f32, 0f32).into(), orientation),
-                cube::Cube::new((0.5f32, -0.5f32, 0f32).into(), orientation),
-                cube::Cube::new((-0.5f32, 0f32, 0f32).into(), orientation),
-                cube::Cube::new((-0.5f32, 0.5f32, 0f32).into(), orientation),
-                cube::Cube::new((-0.5f32, -0.5f32, 0f32).into(), orientation),
+                cube::Cube::new((0f32, 0.6f32, 0f32).into(), orientation),
+                cube::Cube::new((0f32, -0.6f32, 0f32).into(), orientation),
+                cube::Cube::new((0.6f32, 0f32, 0f32).into(), orientation),
+                cube::Cube::new((0.6f32, 0.6f32, 0f32).into(), orientation),
+                cube::Cube::new((0.6f32, -0.6f32, 0f32).into(), orientation),
+                cube::Cube::new((-0.6f32, 0f32, 0f32).into(), orientation),
+                cube::Cube::new((-0.6f32, 0.6f32, 0f32).into(), orientation),
+                cube::Cube::new((-0.6f32, -0.6f32, 0f32).into(), orientation),
             ],
 
             // Default rotation speed
@@ -142,7 +150,7 @@ impl Game {
                 location: Location {
                     x: 0f32,
                     y: 0f32,
-                    z: 1f32,
+                    z: 2f32,
                 },
                 orientation: Orientation {
                     pitch: 0f32,
@@ -162,6 +170,10 @@ impl Game {
         game.enable_vsync();
 
         Ok(game)
+    }
+
+    pub fn set_aspect_ratio(&mut self, aspect: f32) {
+        self.aspect = aspect;
     }
 
     pub fn enable_vsync(&mut self) {
@@ -274,8 +286,8 @@ impl Game {
 
     pub fn mouse_scrolled(&mut self, movement: MouseWheelDirection, _x: i32, y: i32) {
         self.camera.location.z += (match movement {
-            MouseWheelDirection::Normal => y as f32,
-            MouseWheelDirection::Flipped => -y as f32,
+            MouseWheelDirection::Normal => -y as f32,
+            MouseWheelDirection::Flipped => y as f32,
             MouseWheelDirection::Unknown(..) => 0f32,
         }) * ZOOM_PER_SCROLL_PIXEL
     }

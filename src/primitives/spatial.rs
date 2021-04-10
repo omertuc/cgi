@@ -7,8 +7,8 @@ pub(crate) struct Location {
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Orientation {
-    pub pitch: f32,
     pub roll: f32,
+    pub pitch: f32,
     pub yaw: f32,
 }
 

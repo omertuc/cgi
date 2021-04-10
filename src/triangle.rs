@@ -1,6 +1,6 @@
 use failure;
 use gl;
-use nalgebra::{Rotation, Translation, Vector3, Vector4};
+use nalgebra::{Perspective3, Rotation3, Translation3, Vector3, Vector4};
 
 use crate::primitives::spatial::{Location, Orientation};
 use crate::render_gl::data::f32_f32_f32_f32;
@@ -77,10 +77,12 @@ impl Triangle {
     }
 
     pub fn rotated(self) -> Triangle {
-        let homogeneous_matrix = Rotation::from_euler_angles(
-            self.orientation.roll,
-            self.orientation.yaw,
+        let homogeneous_matrix = Rotation3::from_euler_angles(
+            // TODO: for some reason these make more sense when roll is pitch,
+            // pitch is yaw, and yaw is roll. Should probably investigate why.
             self.orientation.pitch,
+            self.orientation.yaw,
+            self.orientation.roll,
         )
         .to_homogeneous();
 
@@ -99,12 +101,11 @@ impl Triangle {
     }
 
     pub fn translated(self) -> Triangle {
-        let homogeneous_matrix = Translation::from(Vector3::new(
+        let homogeneous_matrix = Translation3::from(Vector3::new(
             self.location.x,
             self.location.y,
             self.location.z,
-        ))
-        .to_homogeneous();
+        )).to_homogeneous();
 
         let mut cloned = self.clone();
 
@@ -112,6 +113,19 @@ impl Triangle {
         cloned.b.pos = (&homogeneous_matrix * Vector4::from(self.b.pos)).into();
         cloned.c.pos = (&homogeneous_matrix * Vector4::from(self.c.pos)).into();
         cloned.location = (0f32, 0f32, 0f32).into();
+
+        cloned
+    }
+
+    pub fn projected(self, aspect: f32) -> Triangle {
+        let homogeneous_matrix =
+            Perspective3::new(aspect, std::f32::consts::PI / 2f32 , 0.1, 100000.0).to_homogeneous();
+
+        let mut cloned = self.clone();
+
+        cloned.a.pos = (&homogeneous_matrix * Vector4::from(self.a.pos)).into();
+        cloned.b.pos = (&homogeneous_matrix * Vector4::from(self.b.pos)).into();
+        cloned.c.pos = (&homogeneous_matrix * Vector4::from(self.c.pos)).into();
 
         cloned
     }
