@@ -2,10 +2,10 @@ use failure;
 use gl;
 use nalgebra::{Rotation, Translation, Vector3, Vector4};
 
+use crate::primitives::spatial::{Location, Orientation};
 use crate::render_gl::data::f32_f32_f32_f32;
 use crate::render_gl::{self, buffer, data};
 use crate::resources::Resources;
-use crate::game::{Location, Orientation};
 
 #[derive(VertexAttribPointers, Copy, Clone, Debug)]
 #[repr(C, packed)]
@@ -60,7 +60,13 @@ pub(crate) struct Triangle {
 }
 
 impl Triangle {
-    pub fn new(a: Vertex, b: Vertex, c: Vertex, location: Location, orientation: Orientation) -> Triangle {
+    pub fn new(
+        a: Vertex,
+        b: Vertex,
+        c: Vertex,
+        location: Location,
+        orientation: Orientation,
+    ) -> Triangle {
         Triangle {
             a,
             b,
@@ -71,8 +77,12 @@ impl Triangle {
     }
 
     pub fn rotated(self) -> Triangle {
-        let homogeneous_matrix =
-            Rotation::from_euler_angles(self.orientation.roll, self.orientation.yaw, self.orientation.pitch).to_homogeneous();
+        let homogeneous_matrix = Rotation::from_euler_angles(
+            self.orientation.roll,
+            self.orientation.yaw,
+            self.orientation.pitch,
+        )
+        .to_homogeneous();
 
         let mut cloned = self.clone();
 

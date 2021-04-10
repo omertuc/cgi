@@ -1,93 +1,35 @@
 use std::collections::{HashMap, HashSet};
 use std::f32::consts::TAU;
 
-use sdl2::keyboard::Scancode;
+use sdl2::mouse::MouseWheelDirection;
 
-use controls::{KeyStack, MouseMovement};
-use time::GameTime;
+use controls::GameKey;
+use controls::KeyMap;
 
-use crate::game::camera::Camera;
-use crate::game::controls::Groups;
+use crate::game::controls::{init_key_map, GameKeyStack};
+use crate::primitives::camera::Camera;
+use crate::primitives::input::{KeyStack, MouseMovement};
+use crate::primitives::spatial::{Location, Orientation};
+use crate::primitives::time::GameTime;
 use crate::resources::Resources;
 use crate::triangle;
 use crate::triangle::{Triangle, Vertex};
 
-mod camera;
 mod controls;
-mod time;
+mod cube;
 
 const SPIN_PER_SECOND: f32 = TAU / 2f32;
 const MOVEMENT_PER_SECOND: f32 = TAU / 2f32;
 const SPIN_PER_MOUSE_PIXEL: f32 = TAU / 300f32;
+const ZOOM_PER_SCROLL_PIXEL: f32 = 0.1f32;
 
 struct Settings {
     vsync: bool,
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub enum GameKey {
-    NoOp,
-    RollModifier,
-    CameraModifier,
-    Right,
-    Left,
-    Up,
-    Down,
-    VsyncToggle,
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-pub enum GameKeyGroup {
-    Horizontal,
-    Vertical,
-}
-
-impl Groups for GameKey {
-    type GroupType = GameKeyGroup;
-    fn groups(&self) -> HashSet<GameKeyGroup> {
-        match self {
-            GameKey::Right | GameKey::Left => [GameKeyGroup::Horizontal],
-            GameKey::Up | GameKey::Down => [GameKeyGroup::Vertical],
-            _ => {
-                return HashSet::<GameKeyGroup>::new();
-            }
-        }
-        .iter()
-        .copied()
-        .collect()
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct Location {
-    pub x: f32,
-    pub y: f32,
-    pub z: f32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct Orientation {
-    pub pitch: f32,
-    pub roll: f32,
-    pub yaw: f32,
-}
-
-impl From<(f32, f32, f32)> for Location {
-    fn from(tuple: (f32, f32, f32)) -> Self {
-        Location {
-            x: tuple.0,
-            y: tuple.1,
-            z: tuple.2,
-        }
-    }
-}
-
-type KeyMap = HashMap<Scancode, GameKey>;
-type GameKeyStack = KeyStack<GameKey>;
-
 pub(crate) struct Game {
     triangle_draw: triangle::TrianglesDraw,
-    triangles: Vec<triangle::Triangle>,
+    cubes: Vec<cube::Cube>,
 
     // camera
     camera: Camera,
@@ -116,28 +58,6 @@ pub(crate) struct Game {
     settings: Settings,
 }
 
-pub fn init_key_map() -> HashMap<Scancode, GameKey> {
-    let game_keys = hashmap! {
-        &[Scancode::A, Scancode::Left][..] => GameKey::Left,
-        &[Scancode::D, Scancode::Right][..] => GameKey::Right,
-        &[Scancode::W, Scancode::Up][..] => GameKey::Up,
-        &[Scancode::S, Scancode::Down][..] => GameKey::Down,
-        &[Scancode::V][..] => GameKey::VsyncToggle,
-        &[Scancode::LShift, Scancode::RShift][..] => GameKey::RollModifier,
-        &[Scancode::LCtrl, Scancode::RCtrl][..] => GameKey::CameraModifier,
-    };
-
-    // Flatten
-    let mut final_map = HashMap::new();
-    for (game_key, value) in game_keys {
-        for key in game_key.iter() {
-            final_map.insert(*key, value);
-        }
-    }
-
-    final_map
-}
-
 impl Game {
     pub(crate) fn process(&mut self, timer: u64) {
         let second_fraction =
@@ -158,13 +78,17 @@ impl Game {
         self.camera.orientation.pitch += extra_pitch;
         self.camera.orientation.yaw += extra_yaw;
         self.camera.orientation.roll += extra_roll;
+
+        self.camera = self.camera.normalize()
     }
 
     pub(crate) fn draw(&self, gl: &gl::Gl) {
         println!("{:#?}", self.camera);
         self.triangle_draw.draw(
             &gl,
-            self.triangles
+            self.cubes
+                .iter()
+                .flat_map(|cube| cube.triangles.clone())
                 .clone()
                 .into_iter()
                 .map(Triangle::rotated)
@@ -184,41 +108,27 @@ impl Game {
         video_subsystem: sdl2::VideoSubsystem,
     ) -> Result<Game, failure::Error> {
         let triangle_draw = triangle::TrianglesDraw::new(&res, &gl)?;
-        let triangle_count = 200;
 
-        let location = (0f32, 0f32, 0f32);
-
-        let triangles: Vec<triangle::Triangle> = (0..triangle_count)
-            .into_iter()
-            .map(|triangle_index| (triangle_index as f32) * (TAU / triangle_count as f32))
-            .map(|angle| {
-                triangle::Triangle::new(
-                    Vertex {
-                        pos: (0.5, -0.5, 0.0).into(),
-                        clr: (0.2, 0.2, 0.4, 0.3).into(),
-                    },
-                    Vertex {
-                        pos: (-0.5, -0.5, 0.0).into(),
-                        clr: (0.1, 0.1, 0.3, 0.3).into(),
-                    },
-                    Vertex {
-                        pos: (0.0, 0.5, 0.0).into(),
-                        clr: (0.3, 0.3, 0.5, 0.3).into(),
-                    },
-                    location.into(),
-                    Orientation {
-                        pitch: angle,
-                        roll: angle,
-                        yaw: angle,
-                    }
-                )
-            })
-            .collect();
+        let orientation: Orientation = Orientation {
+            pitch: 0f32,
+            roll: 0f32,
+            yaw: 0f32,
+        };
 
         let mut game = Game {
             key_map: init_key_map(),
             triangle_draw,
-            triangles,
+            cubes: vec![
+                cube::Cube::new((0f32, 0f32, 0f32).into(), orientation),
+                cube::Cube::new((0f32, 0.5f32, 0f32).into(), orientation),
+                cube::Cube::new((0f32, -0.5f32, 0f32).into(), orientation),
+                cube::Cube::new((0.5f32, 0f32, 0f32).into(), orientation),
+                cube::Cube::new((0.5f32, 0.5f32, 0f32).into(), orientation),
+                cube::Cube::new((0.5f32, -0.5f32, 0f32).into(), orientation),
+                cube::Cube::new((-0.5f32, 0f32, 0f32).into(), orientation),
+                cube::Cube::new((-0.5f32, 0.5f32, 0f32).into(), orientation),
+                cube::Cube::new((-0.5f32, -0.5f32, 0f32).into(), orientation),
+            ],
 
             // Default rotation speed
             roll_per_second: 0f32,
@@ -234,7 +144,7 @@ impl Game {
                 location: Location {
                     x: 0f32,
                     y: 0f32,
-                    z: 0f32,
+                    z: 1f32,
                 },
                 orientation: Orientation {
                     pitch: 0f32,
@@ -364,11 +274,22 @@ impl Game {
         }
     }
 
+    pub fn mouse_scrolled(&mut self, movement: MouseWheelDirection, _x: i32, y: i32) {
+        self.camera.location.z += (match movement {
+            MouseWheelDirection::Normal => y as f32,
+            MouseWheelDirection::Flipped => -y as f32,
+            MouseWheelDirection::Unknown(..) => 0f32,
+        }) * ZOOM_PER_SCROLL_PIXEL
+    }
+
     pub fn input_handler(&mut self, event: sdl2::event::Event) {
         match event {
             sdl2::event::Event::MouseButtonDown { .. } => self.mouse_down = true,
             sdl2::event::Event::MouseButtonUp { .. } => self.mouse_down = false,
             sdl2::event::Event::MouseMotion { xrel, yrel, .. } => self.mouse_moved((xrel, yrel)),
+            sdl2::event::Event::MouseWheel {
+                direction, x, y, ..
+            } => self.mouse_scrolled(direction, x, y),
             sdl2::event::Event::KeyDown {
                 scancode: Option::Some(code),
                 repeat,
