@@ -1,5 +1,6 @@
 use crate::primitives::spatial::{Location, Orientation};
 use crate::triangle::{Triangle, Vertex};
+use nalgebra::{Matrix4, Rotation3, Translation3, Vector3};
 
 pub(crate) struct Cube {
     triangles: Vec<Triangle>,
@@ -13,12 +14,34 @@ impl Cube {
             .clone()
             .iter()
             .flat_map(Triangle::vertices)
-            .map(|v| v.oriented(self.orientation))
-            .map(|v| v.translated(self.location))
             .collect()
     }
 
-    pub(crate) fn new(location: Location, orientation: Orientation) -> Self {
+    pub(crate) fn model(&self) -> Matrix4<f32> {
+        let rotation = Rotation3::from_euler_angles(
+            // TODO: for some reason these make more sense when roll is pitch,
+            // pitch is yaw, and yaw is roll. Should probably investigate why.
+            self.orientation.pitch,
+            self.orientation.yaw,
+            self.orientation.roll,
+        )
+        .to_homogeneous();
+
+        let translation = Translation3::from(Vector3::new(
+            self.location.x,
+            self.location.y,
+            self.location.z,
+        ))
+        .to_homogeneous();
+
+        translation * rotation
+    }
+
+    pub(crate) fn new(
+        location: Location,
+        orientation: Orientation,
+        color: (f32, f32, f32),
+    ) -> Self {
         let mut triangles = vec![];
 
         let alpha = 1f32;
@@ -204,7 +227,23 @@ impl Cube {
         ));
 
         Cube {
-            triangles,
+            triangles: triangles
+                .iter()
+                .map(|t| Triangle {
+                    a: Vertex {
+                        pos: t.a.pos,
+                        clr: t.a.clr * color,
+                    },
+                    b: Vertex {
+                        pos: t.b.pos,
+                        clr: t.b.clr * color,
+                    },
+                    c: Vertex {
+                        pos: t.c.pos,
+                        clr: t.c.clr * color,
+                    },
+                })
+                .collect(),
             location,
             orientation,
         }

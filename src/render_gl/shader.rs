@@ -2,6 +2,7 @@ use std;
 use std::ffi::{CStr, CString};
 
 use gl;
+use nalgebra::Matrix4;
 
 use crate::resources;
 use crate::resources::Resources;
@@ -146,6 +147,25 @@ impl Program {
 
     pub fn id(&self) -> gl::types::GLuint {
         self.id
+    }
+
+    pub fn set_mat4_uniform(&self, uniform_name: &str, mat: &Matrix4<f32>) -> Result<(), String> {
+        let loc;
+        let cname = std::ffi::CString::new(uniform_name).expect("CString::new failed");
+        unsafe {
+            loc = self.gl.GetUniformLocation(self.id(), cname.as_ptr());
+        }
+
+        if loc == -1 {
+            return Result::Err(format!("Uniform with name \"{}\" not found", uniform_name));
+        }
+
+        unsafe {
+            self.gl
+                .UniformMatrix4fv(loc, 1, gl::FALSE, mat.as_slice().as_ptr());
+        }
+
+        Ok(())
     }
 
     pub fn set_used(&self) {

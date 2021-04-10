@@ -1,8 +1,7 @@
 use failure;
 use gl;
-use nalgebra::{Perspective3, Rotation3, Translation3, Vector3, Vector4};
+use nalgebra::{Matrix4, Vector3, Vector4};
 
-use crate::primitives::spatial::{Location, Orientation};
 use crate::render_gl::data::f32_f32_f32_f32;
 use crate::render_gl::{self, buffer, data};
 use crate::resources::Resources;
@@ -12,58 +11,6 @@ use crate::resources::Resources;
 pub struct Vertex {
     pub pos: data::f32_f32_f32_f32,
     pub clr: data::u2_u10_u10_u10_rev_float,
-}
-
-impl Vertex {
-    pub(crate) fn oriented(self, orientation: Orientation) -> Self {
-        let homogeneous_matrix = Rotation3::from_euler_angles(
-            // TODO: for some reason these make more sense when roll is pitch,
-            // pitch is yaw, and yaw is roll. Should probably investigate why.
-            orientation.pitch,
-            orientation.yaw,
-            orientation.roll,
-        )
-        .to_homogeneous();
-
-        let mut cloned = self.clone();
-
-        cloned.pos = (&homogeneous_matrix * Vector4::from(self.pos)).into();
-
-        cloned
-    }
-
-    pub(crate) fn translated(self, location: Location) -> Self {
-        let homogeneous_matrix =
-            Translation3::from(Vector3::new(location.x, location.y, location.z)).to_homogeneous();
-
-        let mut cloned = self.clone();
-
-        cloned.pos = (&homogeneous_matrix * Vector4::from(self.pos)).into();
-
-        cloned
-    }
-
-    pub fn projected(self, aspect: f32) -> Self {
-        let homogeneous_matrix =
-            Perspective3::new(aspect, std::f32::consts::PI / 2f32, 0.1, 100000.0).to_homogeneous();
-
-        let mut cloned = self.clone();
-
-        cloned.pos = (&homogeneous_matrix * Vector4::from(self.pos)).into();
-
-        cloned
-    }
-
-    pub(crate) fn view_from(self, location: Location, orientation: Orientation) -> Self {
-        let cloned = self.clone();
-        cloned
-            .translated((-location.x, -location.y, -location.z).into())
-            .oriented(Orientation {
-                pitch: -orientation.pitch,
-                roll: -orientation.roll,
-                yaw: -orientation.yaw,
-            })
-    }
 }
 
 pub struct TrianglesDraw {
@@ -90,12 +37,26 @@ impl TrianglesDraw {
         Ok(triangle)
     }
 
-    pub fn draw(&self, gl: &gl::Gl, vertices: Vec<Vertex>) {
+    pub fn draw(
+        &self,
+        gl: &gl::Gl,
+        vertices: Vec<Vertex>,
+        model: &Matrix4<f32>,
+        view: &Matrix4<f32>,
+        projection: &Matrix4<f32>,
+    ) {
         self.vbo.bind();
         self.vbo.dynamic_draw_data(&vertices);
 
         self.program.set_used();
         self.vao.bind();
+
+        self.program.set_mat4_uniform("model", &model).unwrap();
+        self.program.set_mat4_uniform("view", &view).unwrap();
+        self.program
+            .set_mat4_uniform("projection", &projection)
+            .unwrap();
+
         unsafe {
             gl.DrawArrays(gl::TRIANGLES, 0, vertices.len() as i32);
         }

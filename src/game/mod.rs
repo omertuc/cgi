@@ -1,5 +1,8 @@
 use std::f32::consts::TAU;
 
+use image::{GenericImageView, Pixel};
+use nalgebra::Matrix4;
+use rand::Rng;
 use sdl2::mouse::MouseWheelDirection;
 
 use controls::GameKey;
@@ -8,12 +11,11 @@ use controls::KeyMap;
 use crate::game::controls::{init_key_map, GameKeyStack};
 use crate::primitives::camera::Camera;
 use crate::primitives::input::{KeyStack, MouseMovement};
+use crate::primitives::projection::perspective;
 use crate::primitives::spatial::{Location, Orientation};
 use crate::primitives::time::GameTime;
 use crate::resources::Resources;
 use crate::triangle;
-use sdl2::sys::random;
-use rand::Rng;
 
 mod controls;
 mod cube;
@@ -28,7 +30,9 @@ struct Settings {
 }
 
 pub(crate) struct Game {
-    aspect: f32,
+    // Transformation matrices
+    view: Matrix4<f32>,
+    projection: Matrix4<f32>,
 
     pub ongoing: bool,
 
@@ -77,10 +81,12 @@ impl Game {
 
         let rotspeed = std::f32::consts::TAU * second_fraction * 0.3f32;
         let mut rng = rand::thread_rng();
-        self.cubes.iter_mut().for_each(|c| c.orientation = Orientation {
-            pitch: c.orientation.pitch + rng.gen_range(-rotspeed..rotspeed),
-            roll: c.orientation.roll + rng.gen_range(-rotspeed..rotspeed),
-            yaw: c.orientation.yaw + rng.gen_range(-rotspeed..rotspeed),
+        self.cubes.iter_mut().for_each(|c| {
+            c.orientation = Orientation {
+                pitch: c.orientation.pitch + rng.gen_range(-rotspeed..rotspeed),
+                roll: c.orientation.roll + rng.gen_range(-rotspeed..rotspeed),
+                yaw: c.orientation.yaw + rng.gen_range(-rotspeed..rotspeed),
+            }
         });
 
         self.camera.location.x += extra_x;
@@ -91,21 +97,21 @@ impl Game {
         self.camera.orientation.yaw += extra_yaw;
         self.camera.orientation.roll += extra_roll;
 
-        self.camera = self.camera.normalize()
+        self.camera = self.camera.normalize();
+
+        self.view = self.camera.view();
     }
 
     pub(crate) fn draw(&self, gl: &gl::Gl) {
-        self.triangle_draw.draw(
-            &gl,
-            self.cubes
-                .iter()
-                .flat_map(|cube| cube.verticies())
-                .clone()
-                .into_iter()
-                .map(|v| v.view_from(self.camera.location, self.camera.orientation))
-                .map(|v| v.projected(self.aspect))
-                .collect(),
-        );
+        self.cubes.iter().for_each(|cube| {
+            self.triangle_draw.draw(
+                &gl,
+                cube.verticies(),
+                &cube.model(),
+                &self.view,
+                &self.projection,
+            )
+        });
     }
 
     pub fn new(
@@ -125,24 +131,56 @@ impl Game {
             yaw: 0f32,
         };
 
+        let img = image::open("/home/omer/Desktop/bw.png").unwrap();
+
+        let mut cbs = vec![];
+
+        let (w, h) = img.dimensions();
+
+        for i in 0..w {
+            for j in 0..h {
+                if j > 30 {
+                    break;
+                }
+
+                cbs.push(cube::Cube::new(
+                    (0f32 + (i as f32 * 0.6f32), 0f32 + (j as f32 * 0.6f32), 0f32).into(),
+                    orientation,
+                    (
+                        (img.get_pixel(i, j).to_rgb()[0] as f32) / 255f32,
+                        (img.get_pixel(i, j).to_rgb()[1] as f32) / 255f32,
+                        (img.get_pixel(i, j).to_rgb()[2] as f32) / 255f32,
+                    ),
+                ));
+            }
+
+            if i > 30 {
+                break;
+            }
+        }
+
+        let camera = Camera {
+            location: Location {
+                x: 0f32,
+                y: 0f32,
+                z: 2f32,
+            },
+            orientation: Orientation {
+                pitch: 0f32,
+                roll: 0f32,
+                yaw: 0f32,
+            },
+        };
+
         let mut game = Game {
-            aspect,
+            projection: perspective(aspect),
+            view: camera.view(),
 
             ongoing: true,
 
             key_map: init_key_map(),
             triangle_draw,
-            cubes: vec![
-                cube::Cube::new((0f32, 0f32, 0f32).into(), orientation),
-                cube::Cube::new((0f32, 0.6f32, 0f32).into(), orientation),
-                cube::Cube::new((0f32, -0.6f32, 0f32).into(), orientation),
-                cube::Cube::new((0.6f32, 0f32, 0f32).into(), orientation),
-                cube::Cube::new((0.6f32, 0.6f32, 0f32).into(), orientation),
-                cube::Cube::new((0.6f32, -0.6f32, 0f32).into(), orientation),
-                cube::Cube::new((-0.6f32, 0f32, 0f32).into(), orientation),
-                cube::Cube::new((-0.6f32, 0.6f32, 0f32).into(), orientation),
-                cube::Cube::new((-0.6f32, -0.6f32, 0f32).into(), orientation),
-            ],
+            cubes: cbs,
 
             // Default rotation speed
             roll_per_second: 0f32,
@@ -154,18 +192,7 @@ impl Game {
             y_per_second: 0f32,
             z_per_second: 0f32,
 
-            camera: Camera {
-                location: Location {
-                    x: 0f32,
-                    y: 0f32,
-                    z: 2f32,
-                },
-                orientation: Orientation {
-                    pitch: 0f32,
-                    roll: 0f32,
-                    yaw: 0f32,
-                },
-            },
+            camera,
 
             video_subsystem,
 
@@ -176,12 +203,13 @@ impl Game {
         };
 
         game.enable_vsync();
+        game.set_aspect_ratio(aspect);
 
         Ok(game)
     }
 
     pub fn set_aspect_ratio(&mut self, aspect: f32) {
-        self.aspect = aspect;
+        self.projection = perspective(aspect);
     }
 
     pub fn enable_vsync(&mut self) {

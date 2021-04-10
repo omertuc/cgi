@@ -1,3 +1,5 @@
+use std::ops::Mul;
+
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug)]
 #[repr(C, packed)]
@@ -92,6 +94,21 @@ impl From<(f32, f32, f32, f32)> for u2_u10_u10_u10_rev_float {
     fn from(other: (f32, f32, f32, f32)) -> Self {
         u2_u10_u10_u10_rev_float {
             inner: ::vec_2_10_10_10::Vector::new(other.0, other.1, other.2, other.3),
+        }
+    }
+}
+
+impl Mul<(f32, f32, f32)> for u2_u10_u10_u10_rev_float {
+    type Output = Self;
+
+    fn mul(self, rhs: (f32, f32, f32)) -> Self {
+        u2_u10_u10_u10_rev_float {
+            inner: ::vec_2_10_10_10::Vector::new(
+                rhs.0 * self.inner.x(),
+                rhs.1 * self.inner.y(),
+                rhs.2 * self.inner.z(),
+                self.inner.w(),
+            ),
         }
     }
 }
