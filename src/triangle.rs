@@ -40,10 +40,9 @@ impl TrianglesDraw {
     pub fn draw(
         &self,
         gl: &gl::Gl,
-        vertices: Vec<Vertex>,
-        model: &Matrix4<f32>,
-        view: &Matrix4<f32>,
-        projection: &Matrix4<f32>,
+        vertices: &Vec<Vertex>,
+        model_translation: &Matrix4<f32>,
+        model_rotation: &Matrix4<f32>,
     ) {
         self.vbo.bind();
         self.vbo.dynamic_draw_data(&vertices);
@@ -51,15 +50,19 @@ impl TrianglesDraw {
         self.program.set_used();
         self.vao.bind();
 
-        self.program.set_mat4_uniform("model", &model).unwrap();
-        self.program.set_mat4_uniform("view", &view).unwrap();
-        self.program
-            .set_mat4_uniform("projection", &projection)
-            .unwrap();
+        self.program.set_mat4_uniform("model_translation", &model_translation).unwrap();
+        self.program.set_mat4_uniform("model_rotation", &model_rotation).unwrap();
 
         unsafe {
             gl.DrawArrays(gl::TRIANGLES, 0, vertices.len() as i32);
         }
+    }
+
+    pub fn set_view_projection(&self, view: &Matrix4<f32>, projection: &Matrix4<f32>) {
+        self.program.set_mat4_uniform("view", &view).unwrap();
+        self.program
+            .set_mat4_uniform("projection", &projection)
+            .unwrap();
     }
 }
 

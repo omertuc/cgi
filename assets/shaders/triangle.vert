@@ -9,7 +9,8 @@ out VS_OUTPUT {
 
 #define M_PI 3.1415926535897932384626433832795
 
-uniform mat4 model;
+uniform mat4 model_translation;
+uniform mat4 model_rotation;
 uniform mat4 view;
 uniform mat4 projection;
 
@@ -17,5 +18,5 @@ void main()
 {
     OUT.Color = Color;
 
-    gl_Position = vec4(projection * view * model * Position);
+    gl_Position = vec4(projection * view * model_translation * model_rotation * Position);
 }

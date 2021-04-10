@@ -1,23 +1,22 @@
+use nalgebra::{Matrix4, Rotation3, Translation3, Vector3};
+
 use crate::primitives::spatial::{Location, Orientation};
 use crate::triangle::{Triangle, Vertex};
-use nalgebra::{Matrix4, Rotation3, Translation3, Vector3};
 
 pub(crate) struct Cube {
     triangles: Vec<Triangle>,
     pub location: Location,
     pub orientation: Orientation,
+
+    pub verticies: Vec<Vertex>,
 }
 
 impl Cube {
-    pub(crate) fn verticies(&self) -> Vec<Vertex> {
-        self.triangles
-            .clone()
-            .iter()
-            .flat_map(Triangle::vertices)
-            .collect()
+    fn refresh_verticies(&mut self) {
+        self.verticies = self.triangles.iter().flat_map(Triangle::vertices).collect();
     }
 
-    pub(crate) fn model(&self) -> Matrix4<f32> {
+    pub(crate) fn model(&self) -> (Matrix4<f32>, Matrix4<f32>) {
         let rotation = Rotation3::from_euler_angles(
             // TODO: for some reason these make more sense when roll is pitch,
             // pitch is yaw, and yaw is roll. Should probably investigate why.
@@ -34,7 +33,7 @@ impl Cube {
         ))
         .to_homogeneous();
 
-        translation * rotation
+        (translation, rotation)
     }
 
     pub(crate) fn new(
@@ -226,7 +225,7 @@ impl Cube {
             },
         ));
 
-        Cube {
+        let mut cube = Cube {
             triangles: triangles
                 .iter()
                 .map(|t| Triangle {
@@ -246,6 +245,11 @@ impl Cube {
                 .collect(),
             location,
             orientation,
-        }
+            verticies: vec![]
+        };
+
+        cube.refresh_verticies();
+
+        cube
     }
 }

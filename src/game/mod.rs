@@ -100,16 +100,18 @@ impl Game {
         self.camera = self.camera.normalize();
 
         self.view = self.camera.view();
+
+        self.refresh_view_projection();
     }
 
     pub(crate) fn draw(&self, gl: &gl::Gl) {
         self.cubes.iter().for_each(|cube| {
+            let (model_translation, model_rotation) = &cube.model();
             self.triangle_draw.draw(
                 &gl,
-                cube.verticies(),
-                &cube.model(),
-                &self.view,
-                &self.projection,
+                &cube.verticies,
+                &model_translation,
+                &model_rotation,
             )
         });
     }
@@ -139,7 +141,7 @@ impl Game {
 
         for i in 0..w {
             for j in 0..h {
-                if j > 30 {
+                if j > 200 {
                     break;
                 }
 
@@ -154,7 +156,7 @@ impl Game {
                 ));
             }
 
-            if i > 30 {
+            if i > 200 {
                 break;
             }
         }
@@ -204,8 +206,13 @@ impl Game {
 
         game.enable_vsync();
         game.set_aspect_ratio(aspect);
+        game.refresh_view_projection();
 
         Ok(game)
+    }
+
+    pub fn refresh_view_projection(&mut self) {
+        self.triangle_draw.set_view_projection(&self.view, &self.projection);
     }
 
     pub fn set_aspect_ratio(&mut self, aspect: f32) {
