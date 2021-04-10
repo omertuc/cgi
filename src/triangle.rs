@@ -14,6 +14,58 @@ pub struct Vertex {
     pub clr: data::u2_u10_u10_u10_rev_float,
 }
 
+impl Vertex {
+    pub(crate) fn oriented(self, orientation: Orientation) -> Self {
+        let homogeneous_matrix = Rotation3::from_euler_angles(
+            // TODO: for some reason these make more sense when roll is pitch,
+            // pitch is yaw, and yaw is roll. Should probably investigate why.
+            orientation.pitch,
+            orientation.yaw,
+            orientation.roll,
+        )
+        .to_homogeneous();
+
+        let mut cloned = self.clone();
+
+        cloned.pos = (&homogeneous_matrix * Vector4::from(self.pos)).into();
+
+        cloned
+    }
+
+    pub(crate) fn translated(self, location: Location) -> Self {
+        let homogeneous_matrix =
+            Translation3::from(Vector3::new(location.x, location.y, location.z)).to_homogeneous();
+
+        let mut cloned = self.clone();
+
+        cloned.pos = (&homogeneous_matrix * Vector4::from(self.pos)).into();
+
+        cloned
+    }
+
+    pub fn projected(self, aspect: f32) -> Self {
+        let homogeneous_matrix =
+            Perspective3::new(aspect, std::f32::consts::PI / 2f32, 0.1, 100000.0).to_homogeneous();
+
+        let mut cloned = self.clone();
+
+        cloned.pos = (&homogeneous_matrix * Vector4::from(self.pos)).into();
+
+        cloned
+    }
+
+    pub(crate) fn view_from(self, location: Location, orientation: Orientation) -> Self {
+        let cloned = self.clone();
+        cloned
+            .translated((-location.x, -location.y, -location.z).into())
+            .oriented(Orientation {
+                pitch: -orientation.pitch,
+                roll: -orientation.roll,
+                yaw: -orientation.yaw,
+            })
+    }
+}
+
 pub struct TrianglesDraw {
     program: render_gl::Program,
     vbo: buffer::ArrayBuffer,
@@ -52,94 +104,17 @@ impl TrianglesDraw {
 
 #[derive(Debug, Clone)]
 pub(crate) struct Triangle {
-    a: Vertex,
-    b: Vertex,
-    c: Vertex,
-    orientation: Orientation,
-    location: Location,
+    pub a: Vertex,
+    pub b: Vertex,
+    pub c: Vertex,
 }
 
 impl Triangle {
-    pub fn new(
-        a: Vertex,
-        b: Vertex,
-        c: Vertex,
-        location: Location,
-        orientation: Orientation,
-    ) -> Triangle {
-        Triangle {
-            a,
-            b,
-            c,
-            orientation,
-            location,
-        }
+    pub fn new(a: Vertex, b: Vertex, c: Vertex) -> Triangle {
+        Triangle { a, b, c }
     }
 
-    pub fn rotated(self) -> Triangle {
-        let homogeneous_matrix = Rotation3::from_euler_angles(
-            // TODO: for some reason these make more sense when roll is pitch,
-            // pitch is yaw, and yaw is roll. Should probably investigate why.
-            self.orientation.pitch,
-            self.orientation.yaw,
-            self.orientation.roll,
-        )
-        .to_homogeneous();
-
-        let mut cloned = self.clone();
-
-        cloned.a.pos = (&homogeneous_matrix * Vector4::from(self.a.pos)).into();
-        cloned.b.pos = (&homogeneous_matrix * Vector4::from(self.b.pos)).into();
-        cloned.c.pos = (&homogeneous_matrix * Vector4::from(self.c.pos)).into();
-        cloned.orientation = Orientation {
-            pitch: 0f32,
-            yaw: 0f32,
-            roll: 0f32,
-        };
-
-        cloned
-    }
-
-    pub fn translated(self) -> Triangle {
-        let homogeneous_matrix = Translation3::from(Vector3::new(
-            self.location.x,
-            self.location.y,
-            self.location.z,
-        )).to_homogeneous();
-
-        let mut cloned = self.clone();
-
-        cloned.a.pos = (&homogeneous_matrix * Vector4::from(self.a.pos)).into();
-        cloned.b.pos = (&homogeneous_matrix * Vector4::from(self.b.pos)).into();
-        cloned.c.pos = (&homogeneous_matrix * Vector4::from(self.c.pos)).into();
-        cloned.location = (0f32, 0f32, 0f32).into();
-
-        cloned
-    }
-
-    pub fn projected(self, aspect: f32) -> Triangle {
-        let homogeneous_matrix =
-            Perspective3::new(aspect, std::f32::consts::PI / 2f32 , 0.1, 100000.0).to_homogeneous();
-
-        let mut cloned = self.clone();
-
-        cloned.a.pos = (&homogeneous_matrix * Vector4::from(self.a.pos)).into();
-        cloned.b.pos = (&homogeneous_matrix * Vector4::from(self.b.pos)).into();
-        cloned.c.pos = (&homogeneous_matrix * Vector4::from(self.c.pos)).into();
-
-        cloned
-    }
-
-    pub fn view_from(self, location: Location, orientation: Orientation) -> Triangle {
-        let mut cloned = self.clone();
-        cloned.location = (-location.x, -location.y, -location.z).into();
-        cloned.orientation.pitch = -orientation.pitch;
-        cloned.orientation.roll = -orientation.roll;
-        cloned.orientation.yaw = -orientation.yaw;
-        cloned.translated().rotated()
-    }
-
-    pub fn vertices(self) -> Vec<Vertex> {
+    pub fn vertices(&self) -> Vec<Vertex> {
         vec![self.a, self.b, self.c]
     }
 }

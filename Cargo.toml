@@ -14,6 +14,7 @@ render_gl_derive = { path = "render_gl_derive"}
 vec-2-10-10-10 = "0.1.2"
 nalgebra = "0.25.2"
 maplit = "1.0.2"
+rand = "0.8.3"
 
 [dependencies.sdl2]
 version = "0.34.3"

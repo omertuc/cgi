@@ -12,7 +12,8 @@ use crate::primitives::spatial::{Location, Orientation};
 use crate::primitives::time::GameTime;
 use crate::resources::Resources;
 use crate::triangle;
-use crate::triangle::Triangle;
+use sdl2::sys::random;
+use rand::Rng;
 
 mod controls;
 mod cube;
@@ -28,6 +29,8 @@ struct Settings {
 
 pub(crate) struct Game {
     aspect: f32,
+
+    pub ongoing: bool,
 
     triangle_draw: triangle::TrianglesDraw,
     cubes: Vec<cube::Cube>,
@@ -72,6 +75,14 @@ impl Game {
         let extra_y = self.y_per_second * second_fraction;
         let extra_z = self.z_per_second * second_fraction;
 
+        let rotspeed = std::f32::consts::TAU * second_fraction * 0.3f32;
+        let mut rng = rand::thread_rng();
+        self.cubes.iter_mut().for_each(|c| c.orientation = Orientation {
+            pitch: c.orientation.pitch + rng.gen_range(-rotspeed..rotspeed),
+            roll: c.orientation.roll + rng.gen_range(-rotspeed..rotspeed),
+            yaw: c.orientation.yaw + rng.gen_range(-rotspeed..rotspeed),
+        });
+
         self.camera.location.x += extra_x;
         self.camera.location.y += extra_y;
         self.camera.location.z += extra_z;
@@ -84,20 +95,15 @@ impl Game {
     }
 
     pub(crate) fn draw(&self, gl: &gl::Gl) {
-        dbg!(&self.camera);
         self.triangle_draw.draw(
             &gl,
-
             self.cubes
                 .iter()
-                .flat_map(|cube| cube.triangles.clone())
+                .flat_map(|cube| cube.verticies())
                 .clone()
                 .into_iter()
-                .map(Triangle::rotated)
-                .map(Triangle::translated)
-                .map(|t| t.view_from(self.camera.location, self.camera.orientation))
-                .map(|t| t.projected(self.aspect))
-                .flat_map(triangle::Triangle::vertices)
+                .map(|v| v.view_from(self.camera.location, self.camera.orientation))
+                .map(|v| v.projected(self.aspect))
                 .collect(),
         );
     }
@@ -114,13 +120,15 @@ impl Game {
         let triangle_draw = triangle::TrianglesDraw::new(&res, &gl)?;
 
         let orientation: Orientation = Orientation {
-            pitch: 1f32,
+            pitch: 0f32,
             roll: 0f32,
             yaw: 0f32,
         };
 
         let mut game = Game {
             aspect,
+
+            ongoing: true,
 
             key_map: init_key_map(),
             triangle_draw,
@@ -209,9 +217,9 @@ impl Game {
     pub fn handle_movement(&mut self, normalized: GameKeyStack) {
         let speed = MOVEMENT_PER_SECOND;
 
-        if normalized.is_pressed(GameKey::Up) {
+        if normalized.is_pressed(GameKey::Forward) {
             self.y_per_second = speed;
-        } else if normalized.is_pressed(GameKey::Down) {
+        } else if normalized.is_pressed(GameKey::Backwards) {
             self.y_per_second = -speed;
         } else {
             self.y_per_second = 0f32;
@@ -229,29 +237,20 @@ impl Game {
     pub fn handle_rotation(&mut self, normalized: GameKeyStack) {
         let speed = SPIN_PER_SECOND;
 
-        if normalized.is_pressed(GameKey::Up) {
-            self.pitch_per_second = speed;
-        } else if normalized.is_pressed(GameKey::Down) {
-            self.pitch_per_second = -speed;
+        if normalized.is_pressed(GameKey::Forward) {
+            self.z_per_second = -speed;
+        } else if normalized.is_pressed(GameKey::Backwards) {
+            self.z_per_second = speed;
         } else {
-            self.pitch_per_second = 0f32;
+            self.z_per_second = 0f32;
         }
 
         if normalized.is_pressed(GameKey::Right) {
-            if normalized.is_pressed(GameKey::RollModifier) {
-                self.roll_per_second = speed;
-            } else {
-                self.yaw_per_second = speed;
-            }
+            self.x_per_second = speed;
         } else if normalized.is_pressed(GameKey::Left) {
-            if normalized.is_pressed(GameKey::RollModifier) {
-                self.roll_per_second = -speed;
-            } else {
-                self.yaw_per_second = -speed;
-            }
+            self.x_per_second = -speed;
         } else {
-            self.roll_per_second = 0f32;
-            self.yaw_per_second = 0f32;
+            self.x_per_second = 0f32;
         }
     }
 
@@ -263,6 +262,11 @@ impl Game {
             self.toggle_vsync();
         }
 
+        if normalized.is_pressed(GameKey::Quit) {
+            self.key_stack = self.key_stack.depress(GameKey::Quit);
+            self.ongoing = false;
+        }
+
         if normalized.is_pressed(GameKey::CameraModifier) {
             self.handle_movement(normalized);
         } else {
@@ -271,17 +275,15 @@ impl Game {
     }
 
     pub fn mouse_moved(&mut self, movement: MouseMovement) {
-        if self.mouse_down {
-            let x_diff = SPIN_PER_MOUSE_PIXEL * (movement.0 as f32);
-            let y_diff = SPIN_PER_MOUSE_PIXEL * (movement.1 as f32);
-            if self.key_stack.normalize().is_pressed(GameKey::RollModifier) {
-                self.camera.orientation.roll += x_diff;
-            } else {
-                self.camera.orientation.yaw += x_diff;
-            }
-
-            self.camera.orientation.pitch += y_diff;
+        let x_diff = SPIN_PER_MOUSE_PIXEL * (movement.0 as f32);
+        let y_diff = SPIN_PER_MOUSE_PIXEL * (movement.1 as f32);
+        if self.key_stack.normalize().is_pressed(GameKey::RollModifier) {
+            self.camera.orientation.roll -= x_diff;
+        } else {
+            self.camera.orientation.yaw -= x_diff;
         }
+
+        self.camera.orientation.pitch -= y_diff;
     }
 
     pub fn mouse_scrolled(&mut self, movement: MouseWheelDirection, _x: i32, y: i32) {

@@ -15,9 +15,10 @@ pub enum GameKey {
     CameraModifier,
     Right,
     Left,
-    Up,
-    Down,
+    Forward,
+    Backwards,
     VsyncToggle,
+    Quit,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -31,7 +32,7 @@ impl Groups for GameKey {
     fn groups(&self) -> HashSet<GameKeyGroup> {
         match self {
             GameKey::Right | GameKey::Left => [GameKeyGroup::Horizontal],
-            GameKey::Up | GameKey::Down => [GameKeyGroup::Vertical],
+            GameKey::Forward | GameKey::Backwards => [GameKeyGroup::Vertical],
             _ => {
                 return HashSet::<GameKeyGroup>::new();
             }
@@ -46,11 +47,12 @@ pub fn init_key_map() -> HashMap<Scancode, GameKey> {
     let game_keys = hashmap! {
         &[Scancode::A, Scancode::Left][..] => GameKey::Left,
         &[Scancode::D, Scancode::Right][..] => GameKey::Right,
-        &[Scancode::W, Scancode::Up][..] => GameKey::Up,
-        &[Scancode::S, Scancode::Down][..] => GameKey::Down,
+        &[Scancode::W, Scancode::Up][..] => GameKey::Forward,
+        &[Scancode::S, Scancode::Down][..] => GameKey::Backwards,
         &[Scancode::V][..] => GameKey::VsyncToggle,
         &[Scancode::LShift, Scancode::RShift][..] => GameKey::RollModifier,
         &[Scancode::LCtrl, Scancode::RCtrl][..] => GameKey::CameraModifier,
+        &[Scancode::Q, Scancode::Escape][..] => GameKey::Quit,
     };
 
     // Flatten
