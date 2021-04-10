@@ -1,9 +1,9 @@
+use std::collections::{HashMap, HashSet};
+
 use sdl2::keyboard::Scancode;
 
-use crate::primitives::input::{KeyStack, MouseMovement};
-
 use crate::primitives::input::Groups;
-use std::collections::{HashMap, HashSet};
+use crate::primitives::input::KeyStack;
 
 pub type KeyMap = HashMap<Scancode, GameKey>;
 pub(crate) type GameKeyStack = KeyStack<GameKey>;

@@ -1,4 +1,3 @@
-use std::collections::{HashMap, HashSet};
 use std::f32::consts::TAU;
 
 use sdl2::mouse::MouseWheelDirection;
@@ -13,7 +12,7 @@ use crate::primitives::spatial::{Location, Orientation};
 use crate::primitives::time::GameTime;
 use crate::resources::Resources;
 use crate::triangle;
-use crate::triangle::{Triangle, Vertex};
+use crate::triangle::Triangle;
 
 mod controls;
 mod cube;
@@ -83,7 +82,6 @@ impl Game {
     }
 
     pub(crate) fn draw(&self, gl: &gl::Gl) {
-        println!("{:#?}", self.camera);
         self.triangle_draw.draw(
             &gl,
             self.cubes
