@@ -17,12 +17,10 @@ use crate::primitives::spatial::{Location, Orientation};
 use crate::primitives::time::GameTime;
 use crate::resources::Resources;
 use crate::triangle;
-use image::imageops::FilterType::Gaussian;
 
 mod controls;
 mod cube;
 
-const SPIN_PER_SECOND: f32 = TAU / 2f32;
 const MOVEMENT_PER_SECOND: f32 = 10f32;
 const SPIN_PER_MOUSE_PIXEL: f32 = TAU / 300f32;
 const ZOOM_PER_SCROLL_PIXEL: f32 = 0.1f32;
@@ -112,10 +110,8 @@ impl Game {
 
         self.cubes.iter().for_each(|cube| {
             let (model_translation, model_rotation) = &cube.model();
-            unsafe {
-                self.triangle_draw
-                    .draw(&gl, &cube.verticies, &model_translation, &model_rotation);
-            }
+            self.triangle_draw
+                .draw(&gl, &cube.verticies, &model_translation, &model_rotation);
         });
     }
 
@@ -245,26 +241,6 @@ impl Game {
             self.disable_vsync()
         } else {
             self.enable_vsync()
-        }
-    }
-
-    pub fn handle_movement(&mut self, normalized: GameKeyStack) {
-        let speed = MOVEMENT_PER_SECOND;
-
-        if normalized.is_pressed(GameKey::Forward) {
-            self.y_per_second = speed;
-        } else if normalized.is_pressed(GameKey::Backwards) {
-            self.y_per_second = -speed;
-        } else {
-            self.y_per_second = 0f32;
-        }
-
-        if normalized.is_pressed(GameKey::Right) {
-            self.x_per_second = speed;
-        } else if normalized.is_pressed(GameKey::Left) {
-            self.x_per_second = -speed;
-        } else {
-            self.x_per_second = 0f32;
         }
     }
 
