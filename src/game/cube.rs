@@ -36,11 +36,7 @@ impl Cube {
         (translation, rotation)
     }
 
-    pub(crate) fn new(
-        location: Location,
-        orientation: Orientation,
-        color: Vector4<f32>,
-    ) -> Self {
+    pub(crate) fn new(location: Location, orientation: Orientation, color: Vector4<f32>) -> Self {
         let mut triangles = vec![];
 
         let alpha = 1f32;
