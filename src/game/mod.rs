@@ -9,6 +9,7 @@ use controls::GameKey;
 use controls::KeyMap;
 
 use crate::game::controls::{init_key_map, GameKeyStack};
+use crate::game::cube::Cube;
 use crate::primitives::camera::Camera;
 use crate::primitives::input::{KeyStack, MouseMovement};
 use crate::primitives::projection::perspective;
@@ -16,6 +17,7 @@ use crate::primitives::spatial::{Location, Orientation};
 use crate::primitives::time::GameTime;
 use crate::resources::Resources;
 use crate::triangle;
+use image::imageops::FilterType::Gaussian;
 
 mod controls;
 mod cube;
@@ -24,6 +26,7 @@ const SPIN_PER_SECOND: f32 = TAU / 2f32;
 const MOVEMENT_PER_SECOND: f32 = 10f32;
 const SPIN_PER_MOUSE_PIXEL: f32 = TAU / 300f32;
 const ZOOM_PER_SCROLL_PIXEL: f32 = 0.1f32;
+const RUN_MULTIPLIER: f32 = 10f32;
 
 struct Settings {
     vsync: bool,
@@ -68,43 +71,28 @@ impl Game {
         let second_fraction =
             (self.game_time.update_ticks(timer) as f32) * self.game_time.tick_second_ratio;
 
-        let extra_pitch = self.pitch_per_second * second_fraction;
-        let extra_yaw = self.yaw_per_second * second_fraction;
-        let extra_roll = self.roll_per_second * second_fraction;
-        self.camera.orientation.pitch += extra_pitch;
-        self.camera.orientation.yaw += extra_yaw;
-        self.camera.orientation.roll += extra_roll;
-
-        let extra_x = self.x_per_second * second_fraction;
-        let extra_y = self.y_per_second * second_fraction;
-        let extra_z = self.z_per_second * second_fraction;
-        self.camera.location.x += extra_x;
-        self.camera.location.y += extra_y;
-        self.camera.location.z += extra_z;
-
+        self.apply_camera_rotations(second_fraction);
+        self.apply_camera_movement(second_fraction);
         self.camera = self.camera.normalize();
 
-        let speed = MOVEMENT_PER_SECOND;
+        self.wiggle_cubes(second_fraction);
+    }
 
-        let normalized = self.key_stack.normalize();
-        if normalized.is_pressed(GameKey::Forward) {
-            self.y_per_second = speed;
-        } else if normalized.is_pressed(GameKey::Backwards) {
-            self.y_per_second = -speed;
-        } else {
-            self.y_per_second = 0f32;
-        }
+    pub fn apply_camera_rotations(&mut self, second_fraction: f32) {
+        self.camera.orientation.pitch += self.pitch_per_second * second_fraction;
+        self.camera.orientation.yaw += self.yaw_per_second * second_fraction;
+        self.camera.orientation.roll += self.roll_per_second * second_fraction;
+    }
 
-        if normalized.is_pressed(GameKey::Right) {
-            self.x_per_second = speed;
-        } else if normalized.is_pressed(GameKey::Left) {
-            self.x_per_second = -speed;
-        } else {
-            self.x_per_second = 0f32;
-        }
+    pub fn apply_camera_movement(&mut self, second_fraction: f32) {
+        self.camera.location.x += self.x_per_second * second_fraction;
+        self.camera.location.y += self.y_per_second * second_fraction;
+        self.camera.location.z += self.z_per_second * second_fraction;
+    }
 
+    fn wiggle_cubes(&mut self, second_fraction: f32) {
         let mut rng = self.rng.clone();
-        let rotspeed = std::f32::consts::TAU * second_fraction * 0.3f32;
+        let rotspeed = std::f32::consts::TAU * second_fraction * 30.0f32;
         self.cubes.iter_mut().for_each(|c| {
             c.orientation = Orientation {
                 pitch: c.orientation.pitch + rng.gen_range(0f32..rotspeed),
@@ -131,23 +119,7 @@ impl Game {
         });
     }
 
-    pub fn new(
-        res: Resources,
-        gl: &gl::Gl,
-        initial_time: u64,
-        timer_frequency: u64,
-        tick_length_us: u64,
-        video_subsystem: sdl2::VideoSubsystem,
-        aspect: f32,
-    ) -> Result<Game, failure::Error> {
-        let triangle_draw = triangle::TrianglesDraw::new(&res, &gl)?;
-
-        let orientation: Orientation = Orientation {
-            pitch: 0f32,
-            roll: 0f32,
-            yaw: 0f32,
-        };
-
+    pub fn get_cubes() -> Vec<Cube> {
         let img = image::open("/home/omer/Desktop/bw.png").unwrap();
 
         let mut cbs = vec![];
@@ -156,13 +128,17 @@ impl Game {
 
         for i in 0..w {
             for j in 0..h {
-                if j > 200 {
+                if j > 100 {
                     break;
                 }
 
                 cbs.push(cube::Cube::new(
                     (0f32 + (i as f32 * 0.9f32), 0f32 + (j as f32 * 0.9f32), 0f32).into(),
-                    orientation,
+                    Orientation {
+                        pitch: 0f32,
+                        roll: 0f32,
+                        yaw: 0f32,
+                    },
                     (
                         (img.get_pixel(i, j).to_rgb()[0] as f32) / 255f32,
                         (img.get_pixel(i, j).to_rgb()[1] as f32) / 255f32,
@@ -171,12 +147,16 @@ impl Game {
                 ));
             }
 
-            if i > 200 {
+            if i > 100 {
                 break;
             }
         }
 
-        let camera = Camera {
+        cbs
+    }
+
+    pub fn default_camera() -> Camera {
+        Camera {
             location: Location {
                 x: 0f32,
                 y: 0f32,
@@ -187,16 +167,26 @@ impl Game {
                 roll: 0f32,
                 yaw: 0f32,
             },
-        };
+        }
+    }
 
+    pub fn new(
+        res: Resources,
+        gl: &gl::Gl,
+        initial_time: u64,
+        timer_frequency: u64,
+        tick_length_us: u64,
+        video_subsystem: sdl2::VideoSubsystem,
+        aspect: f32,
+    ) -> Result<Game, failure::Error> {
         let mut game = Game {
             rng: rand::thread_rng(),
 
             ongoing: true,
 
             key_map: init_key_map(),
-            triangle_draw,
-            cubes: cbs,
+            triangle_draw: triangle::TrianglesDraw::new(&res, &gl)?,
+            cubes: Self::get_cubes(),
 
             // Default rotation speed
             roll_per_second: 0f32,
@@ -208,7 +198,7 @@ impl Game {
             y_per_second: 0f32,
             z_per_second: 0f32,
 
-            camera,
+            camera: Self::default_camera(),
 
             video_subsystem,
 
@@ -279,7 +269,12 @@ impl Game {
     }
 
     pub fn handle_keyboard_movement(&mut self, normalized: GameKeyStack) {
-        let speed = MOVEMENT_PER_SECOND;
+        let speed = MOVEMENT_PER_SECOND
+            * if normalized.is_pressed(GameKey::Run) {
+                RUN_MULTIPLIER
+            } else {
+                1f32
+            };
 
         if normalized.is_pressed(GameKey::Forward) {
             self.z_per_second = -speed;
@@ -311,31 +306,27 @@ impl Game {
             self.ongoing = false;
         }
 
-        if normalized.is_pressed(GameKey::CameraModifier) {
-            self.handle_movement(normalized);
-        } else {
-            self.handle_keyboard_movement(normalized);
-        }
+        self.handle_keyboard_movement(normalized);
     }
 
     pub fn mouse_moved(&mut self, movement: MouseMovement) {
         let x_diff = SPIN_PER_MOUSE_PIXEL * (movement.0 as f32);
         let y_diff = SPIN_PER_MOUSE_PIXEL * (movement.1 as f32);
-        if self.key_stack.normalize().is_pressed(GameKey::RollModifier) {
-            self.camera.orientation.roll -= x_diff;
-        } else {
-            self.camera.orientation.yaw -= x_diff;
-        }
-
+        self.camera.orientation.yaw -= x_diff;
         self.camera.orientation.pitch -= y_diff;
     }
 
     pub fn mouse_scrolled(&mut self, movement: MouseWheelDirection, _x: i32, y: i32) {
-        self.camera.location.z += (match movement {
-            MouseWheelDirection::Normal => -y as f32,
-            MouseWheelDirection::Flipped => y as f32,
+        self.camera.location.y += (match movement {
+            MouseWheelDirection::Normal => y as f32,
+            MouseWheelDirection::Flipped => -y as f32,
             MouseWheelDirection::Unknown(..) => 0f32,
         }) * ZOOM_PER_SCROLL_PIXEL
+            * if self.key_stack.normalize().is_pressed(GameKey::Run) {
+                RUN_MULTIPLIER
+            } else {
+                1f32
+            }
     }
 
     pub fn input_handler(&mut self, event: sdl2::event::Event) {

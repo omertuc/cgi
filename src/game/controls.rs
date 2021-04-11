@@ -11,8 +11,7 @@ pub(crate) type GameKeyStack = KeyStack<GameKey>;
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub enum GameKey {
     NoOp,
-    RollModifier,
-    CameraModifier,
+    Run,
     Right,
     Left,
     Forward,
@@ -50,8 +49,7 @@ pub fn init_key_map() -> HashMap<Scancode, GameKey> {
         &[Scancode::W, Scancode::Up][..] => GameKey::Forward,
         &[Scancode::S, Scancode::Down][..] => GameKey::Backwards,
         &[Scancode::V][..] => GameKey::VsyncToggle,
-        &[Scancode::LShift, Scancode::RShift][..] => GameKey::RollModifier,
-        &[Scancode::LCtrl, Scancode::RCtrl][..] => GameKey::CameraModifier,
+        &[Scancode::LShift, Scancode::RShift][..] => GameKey::Run,
         &[Scancode::Q, Scancode::Escape][..] => GameKey::Quit,
     };
 
