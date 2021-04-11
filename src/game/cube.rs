@@ -1,4 +1,4 @@
-use nalgebra::{Matrix4, Rotation3, Translation3, Vector3};
+use nalgebra::{Matrix4, Rotation3, Translation3, Vector3, Vector4};
 
 use crate::primitives::spatial::{Location, Orientation};
 use crate::triangle::{Triangle, Vertex};
@@ -39,7 +39,7 @@ impl Cube {
     pub(crate) fn new(
         location: Location,
         orientation: Orientation,
-        color: (f32, f32, f32),
+        color: Vector4<f32>,
     ) -> Self {
         let mut triangles = vec![];
 

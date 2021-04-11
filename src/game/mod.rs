@@ -17,6 +17,8 @@ use crate::primitives::spatial::{Location, Orientation};
 use crate::primitives::time::GameTime;
 use crate::resources::Resources;
 use crate::triangle;
+use crate::game::controls::GameKey::Walk;
+use nalgebra::{Vector3, Vector4};
 
 mod controls;
 mod cube;
@@ -25,6 +27,7 @@ const MOVEMENT_PER_SECOND: f32 = 10f32;
 const SPIN_PER_MOUSE_PIXEL: f32 = TAU / 300f32;
 const ZOOM_PER_SCROLL_PIXEL: f32 = 0.1f32;
 const RUN_MULTIPLIER: f32 = 10f32;
+const WALK_MULTIPLIER: f32 = 0.1f32;
 
 struct Settings {
     vsync: bool,
@@ -90,13 +93,19 @@ impl Game {
 
     fn wiggle_cubes(&mut self, second_fraction: f32) {
         let mut rng = self.rng.clone();
-        let rotspeed = std::f32::consts::TAU * second_fraction * 30.0f32;
+        let rotspeed = std::f32::consts::TAU * second_fraction * 1.0f32;
+        let movspeed = std::f32::consts::TAU * second_fraction * 3.0f32;
         self.cubes.iter_mut().for_each(|c| {
             c.orientation = Orientation {
                 pitch: c.orientation.pitch + rng.gen_range(0f32..rotspeed),
                 roll: c.orientation.roll + rng.gen_range(0f32..rotspeed),
                 yaw: c.orientation.yaw + rng.gen_range(0f32..rotspeed),
-            }
+            };
+            c.location = Location {
+                x: c.location.x + rng.gen_range(-movspeed..movspeed),
+                y: c.location.y + rng.gen_range(-movspeed..movspeed),
+                z: c.location.z + rng.gen_range(-movspeed..movspeed),
+            };
         });
 
         self.rng = rng;
@@ -124,7 +133,7 @@ impl Game {
 
         for i in 0..w {
             for j in 0..h {
-                if j > 100 {
+                if j > 50 {
                     break;
                 }
 
@@ -135,15 +144,16 @@ impl Game {
                         roll: 0f32,
                         yaw: 0f32,
                     },
-                    (
+                    Vector4::new(
                         (img.get_pixel(i, j).to_rgb()[0] as f32) / 255f32,
                         (img.get_pixel(i, j).to_rgb()[1] as f32) / 255f32,
                         (img.get_pixel(i, j).to_rgb()[2] as f32) / 255f32,
+                        1.0f32,
                     ),
                 ));
             }
 
-            if i > 100 {
+            if i > 50 {
                 break;
             }
         }
@@ -248,6 +258,8 @@ impl Game {
         let speed = MOVEMENT_PER_SECOND
             * if normalized.is_pressed(GameKey::Run) {
                 RUN_MULTIPLIER
+            } else if normalized.is_pressed(GameKey::Walk) {
+                WALK_MULTIPLIER
             } else {
                 1f32
             };
@@ -300,6 +312,8 @@ impl Game {
         }) * ZOOM_PER_SCROLL_PIXEL
             * if self.key_stack.normalize().is_pressed(GameKey::Run) {
                 RUN_MULTIPLIER
+            } else if self.key_stack.normalize().is_pressed(GameKey::Walk) {
+                WALK_MULTIPLIER
             } else {
                 1f32
             }

@@ -1,5 +1,7 @@
 use std::ops::Mul;
 
+use nalgebra::Vector4;
+
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug)]
 #[repr(C, packed)]
@@ -108,6 +110,21 @@ impl Mul<(f32, f32, f32)> for u2_u10_u10_u10_rev_float {
                 rhs.1 * self.inner.y(),
                 rhs.2 * self.inner.z(),
                 self.inner.w(),
+            ),
+        }
+    }
+}
+
+impl Mul<Vector4<f32>> for u2_u10_u10_u10_rev_float {
+    type Output = Self;
+
+    fn mul(self, rhs: Vector4<f32>) -> Self {
+        u2_u10_u10_u10_rev_float {
+            inner: ::vec_2_10_10_10::Vector::new(
+                rhs.x * self.inner.x(),
+                rhs.y * self.inner.y(),
+                rhs.z * self.inner.z(),
+                rhs.w * self.inner.w(),
             ),
         }
     }

@@ -12,6 +12,7 @@ pub(crate) type GameKeyStack = KeyStack<GameKey>;
 pub enum GameKey {
     NoOp,
     Run,
+    Walk,
     Right,
     Left,
     Forward,
@@ -50,6 +51,7 @@ pub fn init_key_map() -> HashMap<Scancode, GameKey> {
         &[Scancode::S, Scancode::Down][..] => GameKey::Backwards,
         &[Scancode::V][..] => GameKey::VsyncToggle,
         &[Scancode::LShift, Scancode::RShift][..] => GameKey::Run,
+        &[Scancode::LCtrl, Scancode::RCtrl][..] => GameKey::Walk,
         &[Scancode::Q, Scancode::Escape][..] => GameKey::Quit,
     };
 
