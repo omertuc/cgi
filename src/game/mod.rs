@@ -8,7 +8,6 @@ use sdl2::mouse::MouseWheelDirection;
 use controls::GameKey;
 use controls::KeyMap;
 
-use crate::game::controls::GameKey::Walk;
 use crate::game::controls::{init_key_map, GameKeyStack};
 use crate::game::cube::Cube;
 use crate::primitives::camera::Camera;
@@ -18,7 +17,7 @@ use crate::primitives::spatial::{Location, Orientation};
 use crate::primitives::time::GameTime;
 use crate::resources::Resources;
 use crate::triangle;
-use nalgebra::{Vector3, Vector4};
+use nalgebra::Vector4;
 
 mod controls;
 mod cube;
