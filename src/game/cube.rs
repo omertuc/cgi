@@ -245,7 +245,7 @@ impl Cube {
                 .collect(),
             location,
             orientation,
-            verticies: vec![]
+            verticies: vec![],
         };
 
         cube.refresh_verticies();

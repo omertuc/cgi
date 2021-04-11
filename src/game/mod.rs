@@ -1,7 +1,7 @@
 use std::f32::consts::TAU;
 
 use image::{GenericImageView, Pixel};
-use nalgebra::Matrix4;
+use rand::rngs::ThreadRng;
 use rand::Rng;
 use sdl2::mouse::MouseWheelDirection;
 
@@ -21,7 +21,7 @@ mod controls;
 mod cube;
 
 const SPIN_PER_SECOND: f32 = TAU / 2f32;
-const MOVEMENT_PER_SECOND: f32 = TAU / 2f32;
+const MOVEMENT_PER_SECOND: f32 = 10f32;
 const SPIN_PER_MOUSE_PIXEL: f32 = TAU / 300f32;
 const ZOOM_PER_SCROLL_PIXEL: f32 = 0.1f32;
 
@@ -30,10 +30,6 @@ struct Settings {
 }
 
 pub(crate) struct Game {
-    // Transformation matrices
-    view: Matrix4<f32>,
-    projection: Matrix4<f32>,
-
     pub ongoing: bool,
 
     triangle_draw: triangle::TrianglesDraw,
@@ -64,6 +60,7 @@ pub(crate) struct Game {
 
     // Game settings
     settings: Settings,
+    rng: ThreadRng,
 }
 
 impl Game {
@@ -74,45 +71,63 @@ impl Game {
         let extra_pitch = self.pitch_per_second * second_fraction;
         let extra_yaw = self.yaw_per_second * second_fraction;
         let extra_roll = self.roll_per_second * second_fraction;
-
-        let extra_x = self.x_per_second * second_fraction;
-        let extra_y = self.y_per_second * second_fraction;
-        let extra_z = self.z_per_second * second_fraction;
-
-        let rotspeed = std::f32::consts::TAU * second_fraction * 0.3f32;
-        let mut rng = rand::thread_rng();
-        self.cubes.iter_mut().for_each(|c| {
-            c.orientation = Orientation {
-                pitch: c.orientation.pitch + rng.gen_range(-rotspeed..rotspeed),
-                roll: c.orientation.roll + rng.gen_range(-rotspeed..rotspeed),
-                yaw: c.orientation.yaw + rng.gen_range(-rotspeed..rotspeed),
-            }
-        });
-
-        self.camera.location.x += extra_x;
-        self.camera.location.y += extra_y;
-        self.camera.location.z += extra_z;
-
         self.camera.orientation.pitch += extra_pitch;
         self.camera.orientation.yaw += extra_yaw;
         self.camera.orientation.roll += extra_roll;
 
+        let extra_x = self.x_per_second * second_fraction;
+        let extra_y = self.y_per_second * second_fraction;
+        let extra_z = self.z_per_second * second_fraction;
+        self.camera.location.x += extra_x;
+        self.camera.location.y += extra_y;
+        self.camera.location.z += extra_z;
+
         self.camera = self.camera.normalize();
 
-        self.view = self.camera.view();
+        let speed = MOVEMENT_PER_SECOND;
 
-        self.refresh_view_projection();
+        let normalized = self.key_stack.normalize();
+        if normalized.is_pressed(GameKey::Forward) {
+            self.y_per_second = speed;
+        } else if normalized.is_pressed(GameKey::Backwards) {
+            self.y_per_second = -speed;
+        } else {
+            self.y_per_second = 0f32;
+        }
+
+        if normalized.is_pressed(GameKey::Right) {
+            self.x_per_second = speed;
+        } else if normalized.is_pressed(GameKey::Left) {
+            self.x_per_second = -speed;
+        } else {
+            self.x_per_second = 0f32;
+        }
+
+        let mut rng = self.rng.clone();
+        let rotspeed = std::f32::consts::TAU * second_fraction * 0.3f32;
+        self.cubes.iter_mut().for_each(|c| {
+            c.orientation = Orientation {
+                pitch: c.orientation.pitch + rng.gen_range(0f32..rotspeed),
+                roll: c.orientation.roll + rng.gen_range(0f32..rotspeed),
+                yaw: c.orientation.yaw + rng.gen_range(0f32..rotspeed),
+            }
+        });
+
+        self.rng = rng;
     }
 
     pub(crate) fn draw(&self, gl: &gl::Gl) {
+        let (view_translation, view_rotation) = self.camera.view();
+
+        self.triangle_draw
+            .set_view(&view_translation, &view_rotation);
+
         self.cubes.iter().for_each(|cube| {
             let (model_translation, model_rotation) = &cube.model();
-            self.triangle_draw.draw(
-                &gl,
-                &cube.verticies,
-                &model_translation,
-                &model_rotation,
-            )
+            unsafe {
+                self.triangle_draw
+                    .draw(&gl, &cube.verticies, &model_translation, &model_rotation);
+            }
         });
     }
 
@@ -146,7 +161,7 @@ impl Game {
                 }
 
                 cbs.push(cube::Cube::new(
-                    (0f32 + (i as f32 * 0.6f32), 0f32 + (j as f32 * 0.6f32), 0f32).into(),
+                    (0f32 + (i as f32 * 0.9f32), 0f32 + (j as f32 * 0.9f32), 0f32).into(),
                     orientation,
                     (
                         (img.get_pixel(i, j).to_rgb()[0] as f32) / 255f32,
@@ -175,8 +190,7 @@ impl Game {
         };
 
         let mut game = Game {
-            projection: perspective(aspect),
-            view: camera.view(),
+            rng: rand::thread_rng(),
 
             ongoing: true,
 
@@ -206,17 +220,12 @@ impl Game {
 
         game.enable_vsync();
         game.set_aspect_ratio(aspect);
-        game.refresh_view_projection();
 
         Ok(game)
     }
 
-    pub fn refresh_view_projection(&mut self) {
-        self.triangle_draw.set_view_projection(&self.view, &self.projection);
-    }
-
     pub fn set_aspect_ratio(&mut self, aspect: f32) {
-        self.projection = perspective(aspect);
+        self.triangle_draw.set_projection(&perspective(aspect));
     }
 
     pub fn enable_vsync(&mut self) {
@@ -269,8 +278,8 @@ impl Game {
         }
     }
 
-    pub fn handle_rotation(&mut self, normalized: GameKeyStack) {
-        let speed = SPIN_PER_SECOND;
+    pub fn handle_keyboard_movement(&mut self, normalized: GameKeyStack) {
+        let speed = MOVEMENT_PER_SECOND;
 
         if normalized.is_pressed(GameKey::Forward) {
             self.z_per_second = -speed;
@@ -305,7 +314,7 @@ impl Game {
         if normalized.is_pressed(GameKey::CameraModifier) {
             self.handle_movement(normalized);
         } else {
-            self.handle_rotation(normalized);
+            self.handle_keyboard_movement(normalized);
         }
     }
 

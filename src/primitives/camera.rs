@@ -20,7 +20,7 @@ impl Camera {
         }
     }
 
-    pub fn view(&self) -> Matrix4<f32> {
+    pub fn view(&self) -> (Matrix4<f32>, Matrix4<f32>) {
         let rotation = Rotation3::from_euler_angles(
             // TODO: for some reason these make more sense when roll is pitch,
             // pitch is yaw, and yaw is roll. Should probably investigate why.
@@ -37,6 +37,6 @@ impl Camera {
         ))
         .to_homogeneous();
 
-        rotation * translation
+        (rotation, translation)
     }
 }

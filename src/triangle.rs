@@ -44,22 +44,35 @@ impl TrianglesDraw {
         model_translation: &Matrix4<f32>,
         model_rotation: &Matrix4<f32>,
     ) {
+        self.program.set_used();
+
+        self.program
+            .set_mat4_uniform("model_translation", &model_translation)
+            .unwrap();
+        self.program
+            .set_mat4_uniform("model_rotation", &model_rotation)
+            .unwrap();
+
         self.vbo.bind();
         self.vbo.dynamic_draw_data(&vertices);
 
-        self.program.set_used();
         self.vao.bind();
-
-        self.program.set_mat4_uniform("model_translation", &model_translation).unwrap();
-        self.program.set_mat4_uniform("model_rotation", &model_rotation).unwrap();
 
         unsafe {
             gl.DrawArrays(gl::TRIANGLES, 0, vertices.len() as i32);
         }
     }
 
-    pub fn set_view_projection(&self, view: &Matrix4<f32>, projection: &Matrix4<f32>) {
-        self.program.set_mat4_uniform("view", &view).unwrap();
+    pub fn set_view(&self, view_translation: &Matrix4<f32>, view_rotation: &Matrix4<f32>) {
+        self.program
+            .set_mat4_uniform("view_translation", &view_translation)
+            .unwrap();
+        self.program
+            .set_mat4_uniform("view_rotation", &view_rotation)
+            .unwrap();
+    }
+
+    pub fn set_projection(&self, projection: &Matrix4<f32>) {
         self.program
             .set_mat4_uniform("projection", &projection)
             .unwrap();
