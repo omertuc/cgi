@@ -14,10 +14,11 @@ pub struct Gl {
 
 impl Gl {
     pub fn load_with<F>(loadfn: F) -> Gl
-        where F: FnMut(&'static str) -> *const types::GLvoid
+    where
+        F: FnMut(&'static str) -> *const types::GLvoid,
     {
         Gl {
-            inner: Rc::new(bindings::Gl::load_with(loadfn))
+            inner: Rc::new(bindings::Gl::load_with(loadfn)),
         }
     }
 }

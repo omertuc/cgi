@@ -34,9 +34,11 @@ pub fn vertex_attrib_pointers_derive(input: proc_macro::TokenStream) -> proc_mac
 
 fn generate_vertex_attrib_pointer_calls(data: &syn::Data) -> proc_macro2::TokenStream {
     match data {
-        &syn::Data::Struct(ref s) => {
-            s.fields.iter().map(generate_struct_field_vertex_attrib_pointer_call).collect()
-        }
+        &syn::Data::Struct(ref s) => s
+            .fields
+            .iter()
+            .map(generate_struct_field_vertex_attrib_pointer_call)
+            .collect(),
         &syn::Data::Enum(ref _s) => {
             panic!("Enum vertex attrib pointers derivation unsupported")
         }
@@ -46,7 +48,9 @@ fn generate_vertex_attrib_pointer_calls(data: &syn::Data) -> proc_macro2::TokenS
     }
 }
 
-fn generate_struct_field_vertex_attrib_pointer_call(field: &syn::Field) -> proc_macro2::TokenStream {
+fn generate_struct_field_vertex_attrib_pointer_call(
+    field: &syn::Field,
+) -> proc_macro2::TokenStream {
     let field_ty = &field.ty;
 
     quote! {
@@ -58,4 +62,3 @@ fn generate_struct_field_vertex_attrib_pointer_call(field: &syn::Field) -> proc_
         location += 1;
     }
 }
-

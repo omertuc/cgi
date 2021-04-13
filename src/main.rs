@@ -62,7 +62,7 @@ fn run() -> Result<(), failure::Error> {
     let mut viewport = render_gl::Viewport::for_window(900, 700);
     viewport.set_used(&gl);
 
-    let color_buffer = render_gl::ColorBuffer::from_color(na::Vector3::new(0.04, 0.05, 0.04));
+    let color_buffer = render_gl::ColorBuffer::from_color(na::Vector3::new(0.0, 0.0, 0.0));
 
     color_buffer.set_used(&gl);
     color_buffer.clear(&gl);

@@ -1,14 +1,14 @@
 use nalgebra::{Matrix4, Rotation3, Translation3, Vector3, Vector4};
 
 use crate::primitives::spatial::{Location, Orientation};
-use crate::triangle::{Triangle, Vertex};
+use crate::triangle::{Triangle, Vertex, VertexData};
 
 pub(crate) struct Cube {
     triangles: Vec<Triangle>,
     pub location: Location,
     pub orientation: Orientation,
 
-    pub verticies: Vec<Vertex>,
+    pub verticies: Vec<VertexData>,
 }
 
 impl Cube {
@@ -43,12 +43,12 @@ impl Cube {
 
         triangles.push(Triangle::new(
             Vertex {
-                pos: (0.0, 0.0, 0.0).into(),
-                clr: (0.9, 0.2, 0.4, alpha).into(),
-            },
-            Vertex {
                 pos: (0.5, 0.5, 0.0).into(),
                 clr: (0.9, 0.1, 0.3, alpha).into(),
+            },
+            Vertex {
+                pos: (0.0, 0.0, 0.0).into(),
+                clr: (0.9, 0.2, 0.4, alpha).into(),
             },
             Vertex {
                 pos: (0.5, 0.0, 0.0).into(),
@@ -58,12 +58,12 @@ impl Cube {
 
         triangles.push(Triangle::new(
             Vertex {
-                pos: (0.0, 0.0, 0.0).into(),
-                clr: (0.9, 0.2, 0.4, alpha).into(),
-            },
-            Vertex {
                 pos: (0.0, 0.5, 0.0).into(),
                 clr: (0.9, 0.1, 0.3, alpha).into(),
+            },
+            Vertex {
+                pos: (0.0, 0.0, 0.0).into(),
+                clr: (0.9, 0.2, 0.4, alpha).into(),
             },
             Vertex {
                 pos: (0.5, 0.5, 0.0).into(),
@@ -73,12 +73,12 @@ impl Cube {
 
         triangles.push(Triangle::new(
             Vertex {
-                pos: (0.0, 0.0, 0.0).into(),
-                clr: (0.2, 0.9, 0.4, alpha).into(),
-            },
-            Vertex {
                 pos: (0.0, 0.0, 0.5).into(),
                 clr: (0.1, 0.9, 0.3, alpha).into(),
+            },
+            Vertex {
+                pos: (0.0, 0.0, 0.0).into(),
+                clr: (0.2, 0.9, 0.4, alpha).into(),
             },
             Vertex {
                 pos: (0.0, 0.5, 0.5).into(),
@@ -103,12 +103,12 @@ impl Cube {
 
         triangles.push(Triangle::new(
             Vertex {
-                pos: (0.0, 0.0, 0.0).into(),
-                clr: (0.2, 0.2, 0.9, alpha).into(),
-            },
-            Vertex {
                 pos: (0.5, 0.0, 0.0).into(),
                 clr: (0.1, 0.1, 0.9, alpha).into(),
+            },
+            Vertex {
+                pos: (0.0, 0.0, 0.0).into(),
+                clr: (0.2, 0.2, 0.9, alpha).into(),
             },
             Vertex {
                 pos: (0.5, 0.0, 0.5).into(),
@@ -132,13 +132,13 @@ impl Cube {
         ));
 
         triangles.push(Triangle::new(
-            Vertex {
-                pos: (0.0, 0.5, 0.0).into(),
-                clr: (0.9, 0.9, 0.4, alpha).into(),
-            },
             Vertex {
                 pos: (0.5, 0.5, 0.0).into(),
                 clr: (0.9, 0.9, 0.3, alpha).into(),
+            },
+            Vertex {
+                pos: (0.0, 0.5, 0.0).into(),
+                clr: (0.9, 0.9, 0.4, alpha).into(),
             },
             Vertex {
                 pos: (0.5, 0.5, 0.5).into(),
@@ -178,12 +178,12 @@ impl Cube {
 
         triangles.push(Triangle::new(
             Vertex {
-                pos: (0.5, 0.5, 0.5).into(),
-                clr: (0.2, 0.2, 0.4, alpha).into(),
-            },
-            Vertex {
                 pos: (0.5, 0.5, 0.0).into(),
                 clr: (0.1, 0.1, 0.3, alpha).into(),
+            },
+            Vertex {
+                pos: (0.5, 0.5, 0.5).into(),
+                clr: (0.2, 0.2, 0.4, alpha).into(),
             },
             Vertex {
                 pos: (0.5, 0.0, 0.5).into(),
@@ -208,12 +208,12 @@ impl Cube {
 
         triangles.push(Triangle::new(
             Vertex {
-                pos: (0.0, 0.0, 0.5).into(),
-                clr: (0.2, 0.5, 0.9, alpha).into(),
-            },
-            Vertex {
                 pos: (0.0, 0.5, 0.5).into(),
                 clr: (0.1, 0.5, 0.9, alpha).into(),
+            },
+            Vertex {
+                pos: (0.0, 0.0, 0.5).into(),
+                clr: (0.2, 0.5, 0.9, alpha).into(),
             },
             Vertex {
                 pos: (0.5, 0.5, 0.5).into(),
@@ -222,23 +222,7 @@ impl Cube {
         ));
 
         let mut cube = Cube {
-            triangles: triangles
-                .iter()
-                .map(|t| Triangle {
-                    a: Vertex {
-                        pos: t.a.pos,
-                        clr: t.a.clr * color,
-                    },
-                    b: Vertex {
-                        pos: t.b.pos,
-                        clr: t.b.clr * color,
-                    },
-                    c: Vertex {
-                        pos: t.c.pos,
-                        clr: t.c.clr * color,
-                    },
-                })
-                .collect(),
+            triangles,
             location,
             orientation,
             verticies: vec![],

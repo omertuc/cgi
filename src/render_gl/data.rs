@@ -2,6 +2,9 @@ use std::ops::Mul;
 
 use nalgebra::Vector4;
 
+use crate::primitives::light::Color;
+use crate::primitives::spatial::Location;
+
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug)]
 #[repr(C, packed)]
@@ -85,6 +88,12 @@ impl From<(f32, f32, f32, f32)> for f32_f32_f32_f32 {
     }
 }
 
+impl From<Location> for f32_f32_f32_f32 {
+    fn from(other: Location) -> Self {
+        f32_f32_f32_f32::new(other.x, other.y, other.z, 1.0f32)
+    }
+}
+
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone, Debug)]
 #[repr(C, packed)]
@@ -96,6 +105,14 @@ impl From<(f32, f32, f32, f32)> for u2_u10_u10_u10_rev_float {
     fn from(other: (f32, f32, f32, f32)) -> Self {
         u2_u10_u10_u10_rev_float {
             inner: ::vec_2_10_10_10::Vector::new(other.0, other.1, other.2, other.3),
+        }
+    }
+}
+
+impl From<Color> for u2_u10_u10_u10_rev_float {
+    fn from(other: Color) -> Self {
+        u2_u10_u10_u10_rev_float {
+            inner: ::vec_2_10_10_10::Vector::new(other.r, other.g, other.b, other.a),
         }
     }
 }

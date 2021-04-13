@@ -2,7 +2,6 @@ use std::f32::consts::TAU;
 
 use image::{GenericImageView, Pixel};
 use rand::rngs::ThreadRng;
-use rand::Rng;
 use sdl2::mouse::MouseWheelDirection;
 
 use controls::GameKey;
@@ -18,6 +17,7 @@ use crate::primitives::time::GameTime;
 use crate::resources::Resources;
 use crate::triangle;
 use nalgebra::Vector4;
+use rand::Rng;
 
 mod controls;
 mod cube;
@@ -92,8 +92,8 @@ impl Game {
 
     fn wiggle_cubes(&mut self, second_fraction: f32) {
         let mut rng = self.rng.clone();
-        let rotspeed = std::f32::consts::TAU * second_fraction * 1.0f32;
-        let movspeed = std::f32::consts::TAU * second_fraction * 3.0f32;
+        let rotspeed = std::f32::consts::TAU * second_fraction * 0.5f32;
+        let movspeed = std::f32::consts::TAU * second_fraction * 1.0f32;
         self.cubes.iter_mut().for_each(|c| {
             c.orientation = Orientation {
                 pitch: c.orientation.pitch + rng.gen_range(0f32..rotspeed),
