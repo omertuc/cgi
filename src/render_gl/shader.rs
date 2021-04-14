@@ -149,7 +149,7 @@ impl Program {
         self.id
     }
 
-    pub fn set_mat4_uniform(&self, uniform_name: &str, mat: &Matrix4<f32>) -> Result<(), String> {
+    pub fn get_uniform_loc(&self, uniform_name: &str) -> Result<i32, String> {
         let loc;
         let cname = std::ffi::CString::new(uniform_name).expect("CString::new failed");
         unsafe {
@@ -160,9 +160,26 @@ impl Program {
             return Result::Err(format!("Uniform with name \"{}\" not found", uniform_name));
         }
 
+        return Ok(loc);
+    }
+
+    pub fn set_mat4_uniform(&self, uniform_name: &str, mat: &Matrix4<f32>) -> Result<(), String> {
+        unsafe {
+            self.gl.UniformMatrix4fv(
+                self.get_uniform_loc(uniform_name)?,
+                1,
+                gl::FALSE,
+                mat.as_slice().as_ptr(),
+            );
+        }
+
+        Ok(())
+    }
+
+    pub fn set_float_uniform(&self, uniform_name: &str, float: f32) -> Result<(), String> {
         unsafe {
             self.gl
-                .UniformMatrix4fv(loc, 1, gl::FALSE, mat.as_slice().as_ptr());
+                .Uniform1f(self.get_uniform_loc(uniform_name)?, float);
         }
 
         Ok(())

@@ -11,7 +11,7 @@ use crate::game::controls::{init_key_map, GameKeyStack};
 use crate::game::cube::Cube;
 use crate::primitives::camera::Camera;
 use crate::primitives::input::{KeyStack, MouseMovement};
-use crate::primitives::projection::perspective;
+use crate::primitives::projection::{perspective};
 use crate::primitives::spatial::{Location, Orientation};
 use crate::primitives::time::GameTime;
 use crate::resources::Resources;
@@ -92,8 +92,9 @@ impl Game {
 
     fn wiggle_cubes(&mut self, second_fraction: f32) {
         let mut rng = self.rng.clone();
-        let rotspeed = std::f32::consts::TAU * second_fraction * 0.5f32;
-        let movspeed = std::f32::consts::TAU * second_fraction * 1.0f32;
+        let rotspeed = std::f32::consts::TAU * second_fraction * 0.01f32;
+        let movspeed = second_fraction * 0.01f32;
+        let scalespeed = second_fraction * 0.2f32;
         self.cubes.iter_mut().for_each(|c| {
             c.orientation = Orientation {
                 pitch: c.orientation.pitch + rng.gen_range(0f32..rotspeed),
@@ -105,6 +106,7 @@ impl Game {
                 y: c.location.y + rng.gen_range(-movspeed..movspeed),
                 z: c.location.z + rng.gen_range(-movspeed..movspeed),
             };
+            c.scale += rng.gen_range(-scalespeed..scalespeed);
         });
 
         self.rng = rng;
@@ -117,9 +119,14 @@ impl Game {
             .set_view(&view_translation, &view_rotation);
 
         self.cubes.iter().for_each(|cube| {
-            let (model_translation, model_rotation) = &cube.model();
-            self.triangle_draw
-                .draw(&gl, &cube.verticies, &model_translation, &model_rotation);
+            let (model_scale, model_translation, model_rotation) = cube.model();
+            self.triangle_draw.draw(
+                &gl,
+                &cube.verticies,
+                model_scale,
+                &model_translation,
+                &model_rotation,
+            );
         });
     }
 
@@ -132,10 +139,6 @@ impl Game {
 
         for i in 0..w {
             for j in 0..h {
-                if j > 50 {
-                    break;
-                }
-
                 cbs.push(cube::Cube::new(
                     (0f32 + (i as f32 * 0.9f32), 0f32 + (j as f32 * 0.9f32), 0f32).into(),
                     Orientation {
@@ -143,17 +146,14 @@ impl Game {
                         roll: 0f32,
                         yaw: 0f32,
                     },
+                    1.0,
                     Vector4::new(
-                        (img.get_pixel(i, j).to_rgb()[0] as f32) / 255f32,
-                        (img.get_pixel(i, j).to_rgb()[1] as f32) / 255f32,
-                        (img.get_pixel(i, j).to_rgb()[2] as f32) / 255f32,
+                        (img.get_pixel(i, h - j - 1).to_rgb()[0] as f32) / 255f32,
+                        (img.get_pixel(i, h - j - 1).to_rgb()[1] as f32) / 255f32,
+                        (img.get_pixel(i, h - j - 1).to_rgb()[2] as f32) / 255f32,
                         1.0f32,
                     ),
                 ));
-            }
-
-            if i > 50 {
-                break;
             }
         }
 

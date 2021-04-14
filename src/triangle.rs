@@ -11,7 +11,7 @@ use crate::resources::Resources;
 #[derive(VertexAttribPointers, Copy, Clone, Debug)]
 #[repr(C, packed)]
 pub struct VertexData {
-    pub pos: data::f32_f32_f32_f32,
+    pub pos: data::f32_f32_f32,
     pub clr: data::u2_u10_u10_u10_rev_float,
     pub norm: data::f32_f32_f32,
 }
@@ -29,15 +29,6 @@ impl VertexData {
 pub(crate) struct Vertex {
     pub pos: Location,
     pub clr: Color,
-}
-
-impl From<VertexData> for Vertex {
-    fn from(other: VertexData) -> Self {
-        Vertex {
-            pos: other.pos.into(),
-            clr: other.clr.into(),
-        }
-    }
 }
 
 pub struct TrianglesDraw {
@@ -68,11 +59,15 @@ impl TrianglesDraw {
         &self,
         gl: &gl::Gl,
         vertices: &Vec<VertexData>,
+        model_scale: f32,
         model_translation: &Matrix4<f32>,
         model_rotation: &Matrix4<f32>,
     ) {
         self.program.set_used();
 
+        self.program
+            .set_float_uniform("model_scale", model_scale)
+            .unwrap();
         self.program
             .set_mat4_uniform("model_translation", &model_translation)
             .unwrap();

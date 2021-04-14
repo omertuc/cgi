@@ -8,8 +8,9 @@ extern crate render_gl_derive;
 use std::path::Path;
 
 use failure::err_msg;
-use nalgebra as na;
 
+
+use nalgebra::Vector3;
 use resources::Resources;
 
 mod debug;
@@ -62,7 +63,7 @@ fn run() -> Result<(), failure::Error> {
     let mut viewport = render_gl::Viewport::for_window(900, 700);
     viewport.set_used(&gl);
 
-    let color_buffer = render_gl::ColorBuffer::from_color(na::Vector3::new(0.0, 0.0, 0.0));
+    let color_buffer = render_gl::ColorBuffer::from_color(Vector3::new(0.0, 0.0, 0.0));
 
     color_buffer.set_used(&gl);
     color_buffer.clear(&gl);
