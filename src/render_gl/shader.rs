@@ -21,6 +21,8 @@ pub enum Error {
     CompileError { name: String, message: String },
     #[fail(display = "Failed to link program {}: {}", name, message)]
     LinkError { name: String, message: String },
+    #[fail(display = "Uniform with name \"{}\" not found", name)]
+    UniformNameError { name: String },
 }
 
 pub struct Shader {
@@ -149,7 +151,7 @@ impl Program {
         self.id
     }
 
-    pub fn get_uniform_loc(&self, uniform_name: &str) -> Result<i32, String> {
+    pub fn get_uniform_loc(&self, uniform_name: &str) -> Result<i32, Error> {
         let loc;
         let cname = std::ffi::CString::new(uniform_name).expect("CString::new failed");
         unsafe {
@@ -157,16 +159,18 @@ impl Program {
         }
 
         if loc == -1 {
-            return Result::Err(format!("Uniform with name \"{}\" not found", uniform_name));
+            return Err(Error::UniformNameError {
+                name: uniform_name.to_string()
+            });
         }
 
         return Ok(loc);
     }
 
-    pub fn set_mat4_uniform(&self, uniform_name: &str, mat: &Matrix4<f32>) -> Result<(), String> {
+    pub fn set_mat4_uniform(&self, loc: i32, mat: &Matrix4<f32>) -> Result<(), String> {
         unsafe {
             self.gl.UniformMatrix4fv(
-                self.get_uniform_loc(uniform_name)?,
+                loc,
                 1,
                 gl::FALSE,
                 mat.as_slice().as_ptr(),
@@ -176,10 +180,10 @@ impl Program {
         Ok(())
     }
 
-    pub fn set_float_uniform(&self, uniform_name: &str, float: f32) -> Result<(), String> {
+    pub fn set_float_uniform(&self, loc: i32, float: f32) -> Result<(), String> {
         unsafe {
             self.gl
-                .Uniform1f(self.get_uniform_loc(uniform_name)?, float);
+                .Uniform1f(loc, float);
         }
 
         Ok(())

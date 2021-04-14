@@ -4,8 +4,8 @@ use nalgebra::{Matrix4, Vector3, Vector4};
 
 use crate::primitives::light::Color;
 use crate::primitives::spatial::Location;
-use crate::render_gl::data::{f32_f32_f32, f32_f32_f32_f32};
 use crate::render_gl::{self, buffer, data};
+use crate::render_gl::data::{f32_f32_f32, f32_f32_f32_f32};
 use crate::resources::Resources;
 
 #[derive(VertexAttribPointers, Copy, Clone, Debug)]
@@ -35,6 +35,12 @@ pub struct TrianglesDraw {
     program: render_gl::Program,
     vbo: buffer::ArrayBuffer,
     vao: buffer::VertexArray,
+    model_scale_uniform_loc: i32,
+    model_translation_uniform_loc: i32,
+    model_rotation_uniform_loc: i32,
+    view_translation_uniform_loc: i32,
+    view_rotation_uniform_loc: i32,
+    projection_uniform_loc: i32,
 }
 
 impl TrianglesDraw {
@@ -50,7 +56,24 @@ impl TrianglesDraw {
         vbo.unbind();
         vao.unbind();
 
-        let triangle = TrianglesDraw { program, vbo, vao };
+        let model_scale_uniform_loc = program.get_uniform_loc("model_scale")?;
+        let model_translation_uniform_loc = program.get_uniform_loc("model_translation")?;
+        let model_rotation_uniform_loc = program.get_uniform_loc("model_rotation")?;
+        let view_rotation_uniform_loc = program.get_uniform_loc("view_rotation")?;
+        let view_translation_uniform_loc = program.get_uniform_loc("view_translation")?;
+        let projection_uniform_loc = program.get_uniform_loc("projection")?;
+
+        let triangle = TrianglesDraw {
+            program,
+            vbo,
+            vao,
+            model_scale_uniform_loc,
+            model_translation_uniform_loc,
+            model_rotation_uniform_loc,
+            view_rotation_uniform_loc,
+            view_translation_uniform_loc,
+            projection_uniform_loc,
+        };
 
         Ok(triangle)
     }
@@ -66,18 +89,17 @@ impl TrianglesDraw {
         self.program.set_used();
 
         self.program
-            .set_float_uniform("model_scale", model_scale)
+            .set_float_uniform(self.model_scale_uniform_loc, model_scale)
             .unwrap();
         self.program
-            .set_mat4_uniform("model_translation", &model_translation)
+            .set_mat4_uniform(self.model_translation_uniform_loc, &model_translation)
             .unwrap();
         self.program
-            .set_mat4_uniform("model_rotation", &model_rotation)
+            .set_mat4_uniform(self.model_rotation_uniform_loc, &model_rotation)
             .unwrap();
 
         self.vbo.bind();
         self.vbo.dynamic_draw_data(&vertices);
-
         self.vao.bind();
 
         unsafe {
@@ -87,16 +109,16 @@ impl TrianglesDraw {
 
     pub fn set_view(&self, view_translation: &Matrix4<f32>, view_rotation: &Matrix4<f32>) {
         self.program
-            .set_mat4_uniform("view_translation", &view_translation)
+            .set_mat4_uniform(self.view_translation_uniform_loc, &view_translation)
             .unwrap();
         self.program
-            .set_mat4_uniform("view_rotation", &view_rotation)
+            .set_mat4_uniform(self.view_rotation_uniform_loc, &view_rotation)
             .unwrap();
     }
 
     pub fn set_projection(&self, projection: &Matrix4<f32>) {
         self.program
-            .set_mat4_uniform("projection", &projection)
+            .set_mat4_uniform(self.projection_uniform_loc, &projection)
             .unwrap();
     }
 }
