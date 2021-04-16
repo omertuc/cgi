@@ -2,14 +2,14 @@ use std::f32::consts::TAU;
 
 use image::{GenericImageView, Pixel};
 use nalgebra::Vector4;
-use rand::Rng;
 use rand::rngs::ThreadRng;
+use rand::Rng;
 use sdl2::mouse::MouseWheelDirection;
 
 use controls::GameKey;
 use controls::KeyMap;
 
-use crate::game::controls::{GameKeyStack, init_key_map};
+use crate::game::controls::{init_key_map, GameKeyStack};
 use crate::game::cube::Cube;
 use crate::primitives::camera::Camera;
 use crate::primitives::input::{KeyStack, MouseMovement};
@@ -132,7 +132,6 @@ impl Game {
 
     pub fn get_cubes() -> Vec<Cube> {
         let img = image::load_from_memory(include_bytes!("rs.png")).unwrap();
-
 
         let mut cbs = vec![];
 
@@ -257,12 +256,12 @@ impl Game {
     pub fn handle_keyboard_movement(&mut self, normalized: GameKeyStack) {
         let speed = MOVEMENT_PER_SECOND
             * if normalized.is_pressed(GameKey::Run) {
-            RUN_MULTIPLIER
-        } else if normalized.is_pressed(GameKey::Walk) {
-            WALK_MULTIPLIER
-        } else {
-            1f32
-        };
+                RUN_MULTIPLIER
+            } else if normalized.is_pressed(GameKey::Walk) {
+                WALK_MULTIPLIER
+            } else {
+                1f32
+            };
 
         if normalized.is_pressed(GameKey::Forward) {
             self.z_per_second = -speed;
@@ -311,12 +310,12 @@ impl Game {
             MouseWheelDirection::Unknown(..) => 0f32,
         }) * ZOOM_PER_SCROLL_PIXEL
             * if self.key_stack.normalize().is_pressed(GameKey::Run) {
-            RUN_MULTIPLIER
-        } else if self.key_stack.normalize().is_pressed(GameKey::Walk) {
-            WALK_MULTIPLIER
-        } else {
-            1f32
-        }
+                RUN_MULTIPLIER
+            } else if self.key_stack.normalize().is_pressed(GameKey::Walk) {
+                WALK_MULTIPLIER
+            } else {
+                1f32
+            }
     }
 
     pub fn input_handler(&mut self, event: sdl2::event::Event) {

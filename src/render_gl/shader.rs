@@ -160,7 +160,7 @@ impl Program {
 
         if loc == -1 {
             return Err(Error::UniformNameError {
-                name: uniform_name.to_string()
+                name: uniform_name.to_string(),
             });
         }
 
@@ -169,12 +169,8 @@ impl Program {
 
     pub fn set_mat4_uniform(&self, loc: i32, mat: &Matrix4<f32>) -> Result<(), String> {
         unsafe {
-            self.gl.UniformMatrix4fv(
-                loc,
-                1,
-                gl::FALSE,
-                mat.as_slice().as_ptr(),
-            );
+            self.gl
+                .UniformMatrix4fv(loc, 1, gl::FALSE, mat.as_slice().as_ptr());
         }
 
         Ok(())
@@ -182,8 +178,7 @@ impl Program {
 
     pub fn set_float_uniform(&self, loc: i32, float: f32) -> Result<(), String> {
         unsafe {
-            self.gl
-                .Uniform1f(loc, float);
+            self.gl.Uniform1f(loc, float);
         }
 
         Ok(())

@@ -4,8 +4,8 @@ use nalgebra::{Matrix4, Vector3, Vector4};
 
 use crate::primitives::light::Color;
 use crate::primitives::spatial::Location;
-use crate::render_gl::{self, buffer, data};
 use crate::render_gl::data::{f32_f32_f32, f32_f32_f32_f32};
+use crate::render_gl::{self, buffer, data};
 use crate::resources::Resources;
 
 #[derive(VertexAttribPointers, Copy, Clone, Debug)]
@@ -63,7 +63,7 @@ impl TrianglesDraw {
         let view_translation_uniform_loc = program.get_uniform_loc("view_translation")?;
         let projection_uniform_loc = program.get_uniform_loc("projection")?;
 
-        let triangle = TrianglesDraw {
+        let triangles_draw = TrianglesDraw {
             program,
             vbo,
             vao,
@@ -75,7 +75,7 @@ impl TrianglesDraw {
             projection_uniform_loc,
         };
 
-        Ok(triangle)
+        Ok(triangles_draw)
     }
 
     pub fn draw(

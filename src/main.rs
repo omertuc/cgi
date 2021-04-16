@@ -9,7 +9,6 @@ use std::path::Path;
 
 use failure::err_msg;
 
-
 use nalgebra::Vector3;
 use resources::Resources;
 
