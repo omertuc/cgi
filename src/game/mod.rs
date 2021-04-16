@@ -10,7 +10,7 @@ use controls::GameKey;
 use controls::KeyMap;
 
 use crate::game::controls::{init_key_map, GameKeyStack};
-use crate::game::cube::Cube;
+use crate::models::cube;
 use crate::primitives::camera::Camera;
 use crate::primitives::input::{KeyStack, MouseMovement};
 use crate::primitives::projection::perspective;
@@ -18,9 +18,9 @@ use crate::primitives::spatial::{Location, Orientation};
 use crate::primitives::time::GameTime;
 use crate::resources::Resources;
 use crate::triangle;
+use crate::models::cube::Cube;
 
 mod controls;
-mod cube;
 
 const MOVEMENT_PER_SECOND: f32 = 10f32;
 const SPIN_PER_MOUSE_PIXEL: f32 = TAU / 300f32;
@@ -137,10 +137,10 @@ impl Game {
 
         let (w, h) = img.dimensions();
 
-        for i in (0..w).step_by(4) {
-            for j in (0..h).step_by(4) {
+        for i in (0..w).step_by(1) {
+            for j in (0..h).step_by(1) {
                 cbs.push(cube::Cube::new(
-                    (0f32 + (i as f32 * 0.3f32), 0f32 + (j as f32 * 0.3f32), 0f32).into(),
+                    (0f32 + (i as f32 * 1.0f32), 0f32 + (j as f32 * 1.0f32), 0f32).into(),
                     Orientation {
                         pitch: 0f32,
                         roll: 0f32,

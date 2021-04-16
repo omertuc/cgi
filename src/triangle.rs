@@ -92,10 +92,10 @@ impl TrianglesDraw {
             .set_float_uniform(self.model_scale_uniform_loc, model_scale)
             .unwrap();
         self.program
-            .set_mat4_uniform(self.model_translation_uniform_loc, &model_translation)
+            .set_mat4_uniform(self.model_translation_uniform_loc, model_translation)
             .unwrap();
         self.program
-            .set_mat4_uniform(self.model_rotation_uniform_loc, &model_rotation)
+            .set_mat4_uniform(self.model_rotation_uniform_loc, model_rotation)
             .unwrap();
 
         self.vbo.bind();

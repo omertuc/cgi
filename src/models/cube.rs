@@ -25,14 +25,14 @@ impl Cube {
             self.orientation.yaw,
             self.orientation.roll,
         )
-        .to_homogeneous();
+            .to_homogeneous();
 
         let translation = Translation3::from(Vector3::new(
             self.location.x,
             self.location.y,
             self.location.z,
         ))
-        .to_homogeneous();
+            .to_homogeneous();
 
         (self.scale, translation, rotation)
     }
@@ -131,21 +131,21 @@ impl Cube {
                     Triangle::new(
                         Vertex {
                             pos: p.0.into(),
-                            clr: Vector4::<f32>::new(c.0 .0, c.0 .1, c.0 .2, c.0 .3)
+                            clr: Vector4::<f32>::new(c.0.0, c.0.1, c.0.2, c.0.3)
                                 .component_mul(&color)
                                 .as_slice()
                                 .into(),
                         },
                         Vertex {
                             pos: p.1.into(),
-                            clr: Vector4::<f32>::new(c.1 .0, c.1 .1, c.1 .2, c.1 .3)
+                            clr: Vector4::<f32>::new(c.1.0, c.1.1, c.1.2, c.1.3)
                                 .component_mul(&color)
                                 .as_slice()
                                 .into(),
                         },
                         Vertex {
                             pos: p.2.into(),
-                            clr: Vector4::<f32>::new(c.2 .0, c.2 .1, c.2 .2, c.2 .3)
+                            clr: Vector4::<f32>::new(c.2.0, c.2.1, c.2.2, c.2.3)
                                 .component_mul(&color)
                                 .as_slice()
                                 .into(),

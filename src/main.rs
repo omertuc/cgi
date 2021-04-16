@@ -15,6 +15,7 @@ use resources::Resources;
 mod debug;
 mod game;
 mod primitives;
+mod models;
 pub mod render_gl;
 pub mod resources;
 mod triangle;
