@@ -119,6 +119,7 @@ impl Game {
             .set_view(&view_translation, &view_rotation);
 
         let num_vertices = self.cubes[0].verticies.len();
+        self.triangle_draw.prepare_for_draws();
         self.cubes.iter().enumerate().for_each(|(i, cube)| {
             let (model_scale, model_translation, model_rotation) = cube.model();
             self.triangle_draw.draw(

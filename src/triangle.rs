@@ -88,6 +88,12 @@ impl TrianglesDraw {
         Ok(triangles_draw)
     }
 
+    pub fn prepare_for_draws(&self) {
+        self.program.set_used();
+        self.vbo.bind();
+        self.vao.bind();
+    }
+
     pub fn draw(
         &self,
         gl: &gl::Gl,
