@@ -4,19 +4,13 @@ use crate::primitives::spatial::{Location, Orientation};
 use crate::triangle::{Triangle, Vertex, VertexData};
 
 pub(crate) struct Cube {
-    triangles: Vec<Triangle>,
     pub location: Location,
     pub orientation: Orientation,
     pub scale: f32,
-
     pub verticies: Vec<VertexData>,
 }
 
 impl Cube {
-    fn refresh_verticies(&mut self) {
-        self.verticies = self.triangles.iter().flat_map(Triangle::vertices).collect();
-    }
-
     pub(crate) fn model(&self) -> (f32, Matrix4<f32>, Matrix4<f32>) {
         let rotation = Rotation3::from_euler_angles(
             // TODO: for some reason these make more sense when roll is pitch,
@@ -123,8 +117,8 @@ impl Cube {
             ),
         ];
 
-        let mut cube = Cube {
-            triangles: positions
+        let triangles: Vec<Triangle> =
+            positions
                 .iter()
                 .zip(colors)
                 .map(|(p, c)| {
@@ -152,14 +146,14 @@ impl Cube {
                         },
                     )
                 })
-                .collect(),
+                .collect();
+
+        let mut cube = Cube {
             location,
             orientation,
             scale,
-            verticies: vec![],
+            verticies: triangles.iter().flat_map(Triangle::vertices).collect(),
         };
-
-        cube.refresh_verticies();
 
         cube
     }
