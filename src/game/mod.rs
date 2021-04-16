@@ -139,8 +139,8 @@ impl Game {
 
         let (w, h) = img.dimensions();
 
-        for i in (0..w).step_by(1) {
-            for j in (0..h).step_by(1) {
+        for i in 0..w {
+            for j in 0..h {
                 cbs.push(cube::Cube::new(
                     (0f32 + (i as f32 * 1.0f32), 0f32 + (j as f32 * 1.0f32), 0f32).into(),
                     Orientation {

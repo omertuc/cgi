@@ -24,9 +24,9 @@ uniform mat4 view_rotation;
 uniform mat4 projection;
 
 // Spot light
-vec4 lightPosition = vec4(70.0, 70.0, 5.0, 1.0);
+vec4 lightPosition = vec4(100.0, 100.0, 5.0, 1.0);
 vec4 lightColor = vec4(1.0, 1.0, 1.0, 1.0);
-float lightMaxDistance = 100.0;
+float lightMaxDistance = 150.0;
 
 // Ambient lightning
 float ambientStrength = 0.03;
