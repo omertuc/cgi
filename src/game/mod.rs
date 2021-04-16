@@ -118,14 +118,16 @@ impl Game {
         self.triangle_draw
             .set_view(&view_translation, &view_rotation);
 
-        self.cubes.iter().for_each(|cube| {
+        let num_vertices = self.cubes[0].verticies.len();
+        self.cubes.iter().enumerate().for_each(|(i, cube)| {
             let (model_scale, model_translation, model_rotation) = cube.model();
             self.triangle_draw.draw(
                 &gl,
-                &cube.verticies,
                 model_scale,
                 &model_translation,
                 &model_rotation,
+                num_vertices,
+                num_vertices * i,
             );
         });
     }
@@ -184,14 +186,16 @@ impl Game {
         video_subsystem: sdl2::VideoSubsystem,
         aspect: f32,
     ) -> Result<Game, failure::Error> {
+        let cubes = Self::get_cubes();
+        let verticies = cubes.iter().flat_map(|c| c.verticies.clone()).collect();
         let mut game = Game {
             rng: rand::thread_rng(),
 
             ongoing: true,
 
             key_map: init_key_map(),
-            triangle_draw: triangle::TrianglesDraw::new(&res, &gl)?,
-            cubes: Self::get_cubes(),
+            triangle_draw: triangle::TrianglesDraw::new(&res, &gl, verticies)?,
+            cubes,
 
             // Default rotation speed
             roll_per_second: 0f32,

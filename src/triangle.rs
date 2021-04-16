@@ -4,8 +4,8 @@ use nalgebra::{Matrix4, Vector3, Vector4};
 
 use crate::primitives::light::Color;
 use crate::primitives::spatial::Location;
-use crate::render_gl::data::{f32_f32_f32, f32_f32_f32_f32};
 use crate::render_gl::{self, buffer, data};
+use crate::render_gl::data::{f32_f32_f32, f32_f32_f32_f32};
 use crate::resources::Resources;
 
 #[derive(VertexAttribPointers, Copy, Clone, Debug)]
@@ -44,7 +44,7 @@ pub struct TrianglesDraw {
 }
 
 impl TrianglesDraw {
-    pub fn new(res: &Resources, gl: &gl::Gl) -> Result<TrianglesDraw, failure::Error> {
+    pub fn new(res: &Resources, gl: &gl::Gl, verticies: Vec<VertexData>) -> Result<TrianglesDraw, failure::Error> {
         let program = render_gl::Program::from_res(gl, res, "shaders/triangle")?;
 
         let vbo = buffer::ArrayBuffer::new(&gl);
@@ -75,19 +75,24 @@ impl TrianglesDraw {
             projection_uniform_loc,
         };
 
+        triangles_draw.program.set_used();
+
+        triangles_draw.vbo.bind();
+        triangles_draw.vbo.static_draw_data(&verticies);
+        triangles_draw.vao.bind();
+
         Ok(triangles_draw)
     }
 
     pub fn draw(
         &self,
         gl: &gl::Gl,
-        vertices: &Vec<VertexData>,
         model_scale: f32,
         model_translation: &Matrix4<f32>,
         model_rotation: &Matrix4<f32>,
+        num_vertices: usize,
+        offset: usize,
     ) {
-        self.program.set_used();
-
         self.program
             .set_float_uniform(self.model_scale_uniform_loc, model_scale)
             .unwrap();
@@ -98,12 +103,8 @@ impl TrianglesDraw {
             .set_mat4_uniform(self.model_rotation_uniform_loc, model_rotation)
             .unwrap();
 
-        self.vbo.bind();
-        self.vbo.dynamic_draw_data(&vertices);
-        self.vao.bind();
-
         unsafe {
-            gl.DrawArrays(gl::TRIANGLES, 0, vertices.len() as i32);
+            gl.DrawArrays(gl::TRIANGLES, offset as i32, num_vertices as i32);
         }
     }
 
