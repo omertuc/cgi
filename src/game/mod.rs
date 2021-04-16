@@ -1,23 +1,23 @@
 use std::f32::consts::TAU;
 
 use image::{GenericImageView, Pixel};
+use nalgebra::Vector4;
+use rand::Rng;
 use rand::rngs::ThreadRng;
 use sdl2::mouse::MouseWheelDirection;
 
 use controls::GameKey;
 use controls::KeyMap;
 
-use crate::game::controls::{init_key_map, GameKeyStack};
+use crate::game::controls::{GameKeyStack, init_key_map};
 use crate::game::cube::Cube;
 use crate::primitives::camera::Camera;
 use crate::primitives::input::{KeyStack, MouseMovement};
-use crate::primitives::projection::{perspective};
+use crate::primitives::projection::perspective;
 use crate::primitives::spatial::{Location, Orientation};
 use crate::primitives::time::GameTime;
 use crate::resources::Resources;
 use crate::triangle;
-use nalgebra::Vector4;
-use rand::Rng;
 
 mod controls;
 mod cube;
@@ -92,9 +92,9 @@ impl Game {
 
     fn wiggle_cubes(&mut self, second_fraction: f32) {
         let mut rng = self.rng.clone();
-        let rotspeed = std::f32::consts::TAU * second_fraction * 0.01f32;
-        let movspeed = second_fraction * 0.01f32;
-        let scalespeed = second_fraction * 0.2f32;
+        let rotspeed = std::f32::consts::TAU * second_fraction * 1.11f32;
+        let movspeed = second_fraction * 1.11f32;
+        let scalespeed = second_fraction * 1.8f32;
         self.cubes.iter_mut().for_each(|c| {
             c.orientation = Orientation {
                 pitch: c.orientation.pitch + rng.gen_range(0f32..rotspeed),
@@ -131,16 +131,17 @@ impl Game {
     }
 
     pub fn get_cubes() -> Vec<Cube> {
-        let img = image::open("/home/omer/Desktop/bw.png").unwrap();
+        let img = image::load_from_memory(include_bytes!("rs.png")).unwrap();
+
 
         let mut cbs = vec![];
 
         let (w, h) = img.dimensions();
 
-        for i in 0..w {
-            for j in 0..h {
+        for i in (0..w).step_by(4) {
+            for j in (0..h).step_by(4) {
                 cbs.push(cube::Cube::new(
-                    (0f32 + (i as f32 * 0.9f32), 0f32 + (j as f32 * 0.9f32), 0f32).into(),
+                    (0f32 + (i as f32 * 0.3f32), 0f32 + (j as f32 * 0.3f32), 0f32).into(),
                     Orientation {
                         pitch: 0f32,
                         roll: 0f32,
@@ -256,12 +257,12 @@ impl Game {
     pub fn handle_keyboard_movement(&mut self, normalized: GameKeyStack) {
         let speed = MOVEMENT_PER_SECOND
             * if normalized.is_pressed(GameKey::Run) {
-                RUN_MULTIPLIER
-            } else if normalized.is_pressed(GameKey::Walk) {
-                WALK_MULTIPLIER
-            } else {
-                1f32
-            };
+            RUN_MULTIPLIER
+        } else if normalized.is_pressed(GameKey::Walk) {
+            WALK_MULTIPLIER
+        } else {
+            1f32
+        };
 
         if normalized.is_pressed(GameKey::Forward) {
             self.z_per_second = -speed;
@@ -310,12 +311,12 @@ impl Game {
             MouseWheelDirection::Unknown(..) => 0f32,
         }) * ZOOM_PER_SCROLL_PIXEL
             * if self.key_stack.normalize().is_pressed(GameKey::Run) {
-                RUN_MULTIPLIER
-            } else if self.key_stack.normalize().is_pressed(GameKey::Walk) {
-                WALK_MULTIPLIER
-            } else {
-                1f32
-            }
+            RUN_MULTIPLIER
+        } else if self.key_stack.normalize().is_pressed(GameKey::Walk) {
+            WALK_MULTIPLIER
+        } else {
+            1f32
+        }
     }
 
     pub fn input_handler(&mut self, event: sdl2::event::Event) {
