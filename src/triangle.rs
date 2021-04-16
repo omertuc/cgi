@@ -44,7 +44,11 @@ pub struct TrianglesDraw {
 }
 
 impl TrianglesDraw {
-    pub fn new(res: &Resources, gl: &gl::Gl, verticies: Vec<VertexData>) -> Result<TrianglesDraw, failure::Error> {
+    pub fn new(
+        res: &Resources,
+        gl: &gl::Gl,
+        verticies: Vec<VertexData>,
+    ) -> Result<TrianglesDraw, failure::Error> {
         let program = render_gl::Program::from_res(gl, res, "shaders/triangle")?;
 
         let vbo = buffer::ArrayBuffer::new(&gl);
@@ -93,15 +97,9 @@ impl TrianglesDraw {
         num_vertices: usize,
         offset: usize,
     ) {
-        self.program
-            .set_float_uniform(self.model_scale_uniform_loc, model_scale)
-            .unwrap();
-        self.program
-            .set_mat4_uniform(self.model_translation_uniform_loc, model_translation)
-            .unwrap();
-        self.program
-            .set_mat4_uniform(self.model_rotation_uniform_loc, model_rotation)
-            .unwrap();
+        self.program.set_float_uniform(self.model_scale_uniform_loc, model_scale);
+        self.program.set_mat4_uniform(self.model_translation_uniform_loc, model_translation);
+        self.program.set_mat4_uniform(self.model_rotation_uniform_loc, model_rotation);
 
         unsafe {
             gl.DrawArrays(gl::TRIANGLES, offset as i32, num_vertices as i32);
@@ -109,18 +107,12 @@ impl TrianglesDraw {
     }
 
     pub fn set_view(&self, view_translation: &Matrix4<f32>, view_rotation: &Matrix4<f32>) {
-        self.program
-            .set_mat4_uniform(self.view_translation_uniform_loc, &view_translation)
-            .unwrap();
-        self.program
-            .set_mat4_uniform(self.view_rotation_uniform_loc, &view_rotation)
-            .unwrap();
+        self.program.set_mat4_uniform(self.view_translation_uniform_loc, &view_translation);
+        self.program.set_mat4_uniform(self.view_rotation_uniform_loc, &view_rotation);
     }
 
     pub fn set_projection(&self, projection: &Matrix4<f32>) {
-        self.program
-            .set_mat4_uniform(self.projection_uniform_loc, &projection)
-            .unwrap();
+        self.program.set_mat4_uniform(self.projection_uniform_loc, &projection);
     }
 }
 

@@ -11,6 +11,7 @@ use controls::KeyMap;
 
 use crate::game::controls::{init_key_map, GameKeyStack};
 use crate::models::cube;
+use crate::models::cube::Cube;
 use crate::primitives::camera::Camera;
 use crate::primitives::input::{KeyStack, MouseMovement};
 use crate::primitives::projection::perspective;
@@ -18,7 +19,6 @@ use crate::primitives::spatial::{Location, Orientation};
 use crate::primitives::time::GameTime;
 use crate::resources::Resources;
 use crate::triangle;
-use crate::models::cube::Cube;
 
 mod controls;
 
