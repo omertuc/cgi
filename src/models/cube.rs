@@ -1,7 +1,7 @@
 use nalgebra::{Matrix4, Rotation3, Translation3, Vector3, Vector4};
 
 use crate::primitives::spatial::{Location, Orientation};
-use crate::triangle::{Triangle, Vertex, VertexData};
+use crate::primitives::triangle::{Triangle, Vertex, VertexData};
 
 pub(crate) struct Cube {
     pub location: Location,

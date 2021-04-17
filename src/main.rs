@@ -18,7 +18,6 @@ mod models;
 mod primitives;
 pub mod render_gl;
 pub mod resources;
-mod triangle;
 
 fn main() {
     if let Err(e) = run() {

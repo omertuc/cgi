@@ -1,7 +1,10 @@
 pub mod camera;
 pub mod input;
 pub mod light;
+pub mod object_draw;
 pub mod projection;
 pub mod spatial;
 pub mod spotlight;
+pub mod spotlight_draw;
 pub mod time;
+pub mod triangle;

@@ -2,7 +2,7 @@ use std;
 use std::ffi::{CStr, CString};
 
 use gl;
-use nalgebra::Matrix4;
+use nalgebra::{Matrix4, Vector4};
 
 use crate::resources;
 use crate::resources::Resources;
@@ -167,6 +167,12 @@ impl Program {
         return Ok(loc);
     }
 
+    pub fn set_vec4_uniform(&self, loc: i32, vec: &Vector4<f32>) {
+        unsafe {
+            self.gl.Uniform4f(loc, vec[0], vec[1], vec[2], vec[3]);
+        }
+    }
+
     pub fn set_mat4_uniform(&self, loc: i32, mat: &Matrix4<f32>) {
         unsafe {
             self.gl
@@ -174,9 +180,27 @@ impl Program {
         }
     }
 
+    pub fn set_vec4_array_uniform(&self, loc: i32, idx: usize, vec: &Vector4<f32>) {
+        unsafe {
+            self.gl.Uniform4fv(loc, idx as i32, vec.as_slice().as_ptr());
+        }
+    }
+
+    pub fn set_float_array_uniform(&self, loc: i32, idx: usize, float: f32) {
+        unsafe {
+            self.gl.Uniform1fv(loc, idx as i32, &float);
+        }
+    }
+
     pub fn set_float_uniform(&self, loc: i32, float: f32) {
         unsafe {
             self.gl.Uniform1f(loc, float);
+        }
+    }
+
+    pub fn set_uint_uniform(&self, loc: i32, uint: usize) {
+        unsafe {
+            self.gl.Uniform1ui(loc, uint as u32);
         }
     }
 

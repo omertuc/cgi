@@ -19,7 +19,7 @@ pub fn vertex_attrib_pointers_derive(input: proc_macro::TokenStream) -> proc_mac
 
     let expanded = quote! {
         impl #ident #generics #where_clause {
-            fn vertex_attrib_pointers(gl: &gl::Gl) {
+            pub fn vertex_attrib_pointers(gl: &gl::Gl) {
                 let stride = std::mem::size_of::<Self>();
                 let mut offset = 0;
                 let mut location = 0;

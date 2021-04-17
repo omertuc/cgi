@@ -23,29 +23,46 @@ uniform mat4 view_rotation;
 // Projection matrix
 uniform mat4 projection;
 
-// Spot light
-vec4 lightPosition = vec4(100.0, 100.0, 5.0, 1.0);
-vec4 lightColor = vec4(1.0, 1.0, 1.0, 1.0);
-float lightMaxDistance = 150.0;
+// Spot lights
+#define MAX_LIGHTS 10u
+uniform uint lights_count;
+uniform vec4[MAX_LIGHTS] light_positions;
+uniform vec4[MAX_LIGHTS] light_colors;
+uniform float[MAX_LIGHTS] light_radiuses;
 
 // Ambient lightning
-float ambientStrength = 0.03;
-vec4 ambientColor = vec4((ambientStrength * vec3(1.0, 1.0, 1.0)).xyz, 1.0);
+float ambient_strength = 0.03;
+vec4 ambient_color = vec4((ambient_strength * vec3(1.0, 1.0, 1.0)).xyz, 1.0);
 
 void main()
 {
-    vec4 worldCoordinates = model_translation * model_rotation * vec4(model_scale * Position.xyz, 1.0);
+    vec4 vertex_world_position = model_translation * model_rotation * vec4(model_scale * Position.xyz, 1.0);
+    vec4 vertex_normal = model_rotation * vec4(Normal.xyz, 1.0);
 
-    vec4 objectRotatedNormal = model_rotation * vec4(Normal.xyz, 1.0);
-    float lightDistance = distance(lightPosition, worldCoordinates);
-    float lightPower = 1.0 - (min(lightDistance, lightMaxDistance) / lightMaxDistance);
-    vec4 lightDirection = vec4(normalize(lightPosition.xyz - worldCoordinates.xyz).xyz, 1.0);
-    float diffuse = max(dot(objectRotatedNormal, lightDirection), 0.0);
-    vec4 finalSpotColor = lightPower * diffuse * lightColor;
+    vec4 final_color = ambient_color;
+    for (uint i = 0u; i < MAX_LIGHTS; i++) {
+        if (i == lights_count) {
+            break;
+        }
 
-    vec4 lightDistanceEffect = finalSpotColor * lightPower;
+        vec4 light_position = light_positions[i];
+        vec4 light_color = light_colors[i];
+        float light_radius = light_radiuses[i];
 
-    gl_Position = vec4(projection * view_translation * view_rotation * worldCoordinates);
+        vec4 light_direction = vec4(normalize(light_position.xyz - vertex_world_position.xyz).xyz, 1.0);
 
-    OUT.Color = (lightDistanceEffect + ambientColor) * Color;
+        float light_distance = distance(light_position, vertex_world_position);
+        float light_attenuation = min(light_distance, light_radius) / light_radius;
+
+        float diffuse = max(dot(vertex_normal, light_direction), 0.0);
+
+        vec4 final_spot_color = light_attenuation * diffuse * light_color;
+
+        final_color += final_spot_color;
+    }
+
+    OUT.Color = final_color * Color * 0.00001 + vec4(1.0, 0.0, 0.0, 1.0);
+
+    gl_Position = vec4(projection * view_translation * view_rotation * vertex_world_position);
+
 }

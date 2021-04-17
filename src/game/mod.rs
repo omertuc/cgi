@@ -14,11 +14,16 @@ use crate::models::cube;
 use crate::models::cube::Cube;
 use crate::primitives::camera::Camera;
 use crate::primitives::input::{KeyStack, MouseMovement};
+use crate::primitives::light::Color;
+use crate::primitives::object_draw::ObjectsDraw;
 use crate::primitives::projection::perspective;
 use crate::primitives::spatial::{Location, Orientation};
+use crate::primitives::spotlight::Spotlight;
+use crate::primitives::spotlight_draw::SpotlightDraw;
 use crate::primitives::time::GameTime;
+use crate::primitives::triangle;
+use crate::primitives::triangle::VertexData;
 use crate::resources::Resources;
-use crate::triangle;
 
 mod controls;
 
@@ -35,8 +40,10 @@ struct Settings {
 pub(crate) struct Game {
     pub ongoing: bool,
 
-    triangle_draw: triangle::TrianglesDraw,
-    cubes: Vec<cube::Cube>,
+    objects_draw: ObjectsDraw,
+    spotslights_draw: SpotlightDraw,
+    cubes: Vec<Cube>,
+    spotlights: Vec<Spotlight>,
 
     // camera
     camera: Camera,
@@ -93,7 +100,7 @@ impl Game {
     fn wiggle_cubes(&mut self, second_fraction: f32) {
         let mut rng = self.rng.clone();
         let rotspeed = std::f32::consts::TAU * second_fraction * 1.11f32;
-        let movspeed = second_fraction * 1.11f32;
+        let movspeed = second_fraction * 3.11f32;
         let scalespeed = second_fraction * 1.8f32;
         self.cubes.iter_mut().for_each(|c| {
             c.orientation = Orientation {
@@ -115,14 +122,17 @@ impl Game {
     pub(crate) fn draw(&self, gl: &gl::Gl) {
         let (view_translation, view_rotation) = self.camera.view();
 
-        self.triangle_draw
+        self.objects_draw
+            .set_view(&view_translation, &view_rotation);
+        self.objects_draw.set_spotlights(&self.spotlights);
+        self.spotslights_draw
             .set_view(&view_translation, &view_rotation);
 
         let num_vertices = self.cubes[0].verticies.len();
-        self.triangle_draw.prepare_for_draws();
+        self.objects_draw.prepare_for_draws();
         self.cubes.iter().enumerate().for_each(|(i, cube)| {
             let (model_scale, model_translation, model_rotation) = cube.model();
-            self.triangle_draw.draw(
+            self.objects_draw.draw(
                 &gl,
                 model_scale,
                 &model_translation,
@@ -131,6 +141,40 @@ impl Game {
                 num_vertices * i,
             );
         });
+
+        let num_vertices = self.spotlights[0].cube.verticies.len();
+        self.spotslights_draw.prepare_for_draws();
+        self.spotlights
+            .iter()
+            .enumerate()
+            .for_each(|(i, spotlight)| {
+                let (model_scale, model_translation, model_rotation) = spotlight.cube.model();
+                self.spotslights_draw.draw(
+                    &gl,
+                    model_scale,
+                    &model_translation,
+                    &model_rotation,
+                    num_vertices,
+                    num_vertices * i,
+                );
+            });
+    }
+
+    pub fn get_lights() -> Vec<Spotlight> {
+        vec![Spotlight::new(
+            Location {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+            },
+            Color {
+                r: 1.0,
+                g: 1.0,
+                b: 1.0,
+                a: 1.0,
+            },
+            30.0,
+        )]
     }
 
     pub fn get_cubes() -> Vec<Cube> {
@@ -143,7 +187,7 @@ impl Game {
         for i in 0..w {
             for j in 0..h {
                 cbs.push(cube::Cube::new(
-                    (0f32 + (i as f32 * 1.0f32), 0f32 + (j as f32 * 1.0f32), 0f32).into(),
+                    (0f32 + (i as f32 * 1.5f32), 0f32 + (j as f32 * 1.5f32), 0f32).into(),
                     Orientation {
                         pitch: 0f32,
                         roll: 0f32,
@@ -187,16 +231,28 @@ impl Game {
         video_subsystem: sdl2::VideoSubsystem,
         aspect: f32,
     ) -> Result<Game, failure::Error> {
-        let cubes = Self::get_cubes();
-        let verticies = cubes.iter().flat_map(|c| c.verticies.clone()).collect();
+        let img_cubes = Self::get_cubes();
+        let img_verticies: Vec<VertexData> =
+            img_cubes.iter().flat_map(|c| c.verticies.clone()).collect();
+
+        let spotlights = Self::get_lights();
+        let spot_verticies: Vec<VertexData> = spotlights
+            .iter()
+            .flat_map(|s| s.cube.verticies.clone())
+            .collect();
+
+        let spotlight_draw = SpotlightDraw::new(&res, &gl, spot_verticies)?;
+
         let mut game = Game {
             rng: rand::thread_rng(),
 
             ongoing: true,
 
             key_map: init_key_map(),
-            triangle_draw: triangle::TrianglesDraw::new(&res, &gl, verticies)?,
-            cubes,
+            objects_draw: ObjectsDraw::new(&res, &gl, img_verticies)?,
+            spotslights_draw: spotlight_draw,
+            cubes: img_cubes,
+            spotlights,
 
             // Default rotation speed
             roll_per_second: 0f32,
@@ -225,7 +281,9 @@ impl Game {
     }
 
     pub fn set_aspect_ratio(&mut self, aspect: f32) {
-        self.triangle_draw.set_projection(&perspective(aspect));
+        let projection = &perspective(aspect);
+        self.objects_draw.set_projection(projection);
+        self.spotslights_draw.set_projection(projection);
     }
 
     pub fn enable_vsync(&mut self) {
