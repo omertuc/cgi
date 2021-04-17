@@ -3,7 +3,6 @@ use nalgebra::{Matrix4, Vector4};
 
 use crate::primitives::spotlight::Spotlight;
 use crate::primitives::triangle::VertexData;
-use crate::render_gl;
 use crate::render_gl::buffer::{ArrayBuffer, VertexArray};
 use crate::render_gl::Program;
 use crate::resources::Resources;

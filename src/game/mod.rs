@@ -21,7 +21,6 @@ use crate::primitives::spatial::{Location, Orientation};
 use crate::primitives::spotlight::Spotlight;
 use crate::primitives::spotlight_draw::SpotlightDraw;
 use crate::primitives::time::GameTime;
-use crate::primitives::triangle;
 use crate::primitives::triangle::VertexData;
 use crate::resources::Resources;
 

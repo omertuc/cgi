@@ -1,13 +1,10 @@
 use failure::Error;
 use nalgebra::{Matrix4, Vector4};
 
-use crate::primitives::spotlight::Spotlight;
 use crate::primitives::triangle::VertexData;
-use crate::render_gl;
 use crate::render_gl::buffer::{ArrayBuffer, VertexArray};
 use crate::render_gl::Program;
 use crate::resources::Resources;
-use std::ptr::null;
 
 pub struct SpotlightUniforms {
     pub model_scale: i32,
@@ -99,6 +96,7 @@ impl SpotlightDraw {
         }
     }
 
+    #[allow(dead_code)]
     pub fn set_solid_color(&self, color: &Vector4<f32>) {
         self.program.set_used();
         self.program

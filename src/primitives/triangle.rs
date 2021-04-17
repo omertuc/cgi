@@ -1,14 +1,10 @@
-use failure;
-use failure::Error;
 use gl;
-use nalgebra::{Matrix4, Vector3, Vector4};
+use nalgebra::{Vector3, Vector4};
 
 use crate::primitives::light::Color;
 use crate::primitives::spatial::Location;
-use crate::primitives::spotlight::Spotlight;
+use crate::render_gl::data;
 use crate::render_gl::data::{f32_f32_f32, f32_f32_f32_f32};
-use crate::render_gl::{self, buffer, data, Program};
-use crate::resources::Resources;
 
 #[derive(VertexAttribPointers, Copy, Clone, Debug)]
 #[repr(C, packed)]

@@ -120,7 +120,7 @@ impl Cube {
         let triangles: Vec<Triangle> = positions
             .iter()
             .zip(colors)
-            .map(|(p, c)| {
+            .map(|(p, _c)| {
                 Triangle::new(
                     Vertex {
                         pos: p.0.into(),
@@ -147,7 +147,7 @@ impl Cube {
             })
             .collect();
 
-        let mut cube = Cube {
+        let cube = Cube {
             location,
             orientation,
             scale,

@@ -28,6 +28,7 @@ impl Spotlight {
         }
     }
 
+    #[allow(dead_code)]
     fn set_color(&mut self, color: Color) {
         self.color = color;
     }
