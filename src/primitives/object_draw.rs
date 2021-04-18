@@ -126,7 +126,8 @@ impl ObjectsDraw {
             )
         });
 
-        // self.program.set_uint_uniform(self.uniform_locs.lights_count, lights.len());
+        self.program
+            .set_uint_uniform(self.uniform_locs.lights_count, lights.len());
     }
 
     pub fn set_view(&self, view_translation: &Matrix4<f32>, view_rotation: &Matrix4<f32>) {

@@ -148,6 +148,13 @@ impl Game {
             .enumerate()
             .for_each(|(i, spotlight)| {
                 let (model_scale, model_translation, model_rotation) = spotlight.cube.model();
+                self.spotslights_draw.set_solid_color(&Vector4::<f32>::new(
+                    spotlight.color.r,
+                    spotlight.color.g,
+                    spotlight.color.b,
+                    spotlight.color.a,
+                ));
+
                 self.spotslights_draw.draw(
                     &gl,
                     model_scale,
@@ -160,20 +167,36 @@ impl Game {
     }
 
     pub fn get_lights() -> Vec<Spotlight> {
-        vec![Spotlight::new(
-            Location {
-                x: 0.0,
-                y: 0.0,
-                z: 0.0,
-            },
-            Color {
-                r: 1.0,
-                g: 1.0,
-                b: 1.0,
-                a: 1.0,
-            },
-            30.0,
-        )]
+        vec![
+            Spotlight::new(
+                Location {
+                    x: 0.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                Color {
+                    r: 1.0,
+                    g: 1.0,
+                    b: 1.0,
+                    a: 1.0,
+                },
+                30.0,
+            ),
+            Spotlight::new(
+                Location {
+                    x: 50.0,
+                    y: 0.0,
+                    z: 0.0,
+                },
+                Color {
+                    r: 1.0,
+                    g: 1.0,
+                    b: 1.0,
+                    a: 1.0,
+                },
+                30.0,
+            ),
+        ]
     }
 
     pub fn get_cubes() -> Vec<Cube> {
@@ -192,7 +215,7 @@ impl Game {
                         roll: 0f32,
                         yaw: 0f32,
                     },
-                    1.0,
+                    0.02 * i as f32,
                     Vector4::new(
                         (img.get_pixel(i, h - j - 1).to_rgb()[0] as f32) / 255f32,
                         (img.get_pixel(i, h - j - 1).to_rgb()[1] as f32) / 255f32,

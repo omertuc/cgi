@@ -40,11 +40,7 @@ void main()
     vec4 vertex_normal = model_rotation * vec4(Normal.xyz, 1.0);
 
     vec4 final_color = ambient_color;
-    for (uint i = 0u; i < MAX_LIGHTS; i++) {
-        if (i == lights_count) {
-            break;
-        }
-
+    for (uint i = 0u; i < lights_count; i++) {
         vec4 light_position = light_positions[i];
         vec4 light_color = light_colors[i];
         float light_radius = light_radiuses[i];
@@ -52,7 +48,8 @@ void main()
         vec4 light_direction = vec4(normalize(light_position.xyz - vertex_world_position.xyz).xyz, 1.0);
 
         float light_distance = distance(light_position, vertex_world_position);
-        float light_attenuation = min(light_distance, light_radius) / light_radius;
+        // TODO: Better name
+        float light_attenuation = 1.0 - (min(light_distance, light_radius) / light_radius);
 
         float diffuse = max(dot(vertex_normal, light_direction), 0.0);
 
@@ -61,7 +58,7 @@ void main()
         final_color += final_spot_color;
     }
 
-    OUT.Color = final_color * Color * 0.00001 + vec4(1.0, 0.0, 0.0, 1.0);
+    OUT.Color = Color * final_color;
 
     gl_Position = vec4(projection * view_translation * view_rotation * vertex_world_position);
 

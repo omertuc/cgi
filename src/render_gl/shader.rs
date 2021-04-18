@@ -182,13 +182,14 @@ impl Program {
 
     pub fn set_vec4_array_uniform(&self, loc: i32, idx: usize, vec: &Vector4<f32>) {
         unsafe {
-            self.gl.Uniform4fv(loc, idx as i32, vec.as_slice().as_ptr());
+            self.gl
+                .Uniform4fv(loc + idx as i32, 1 as i32, vec.as_slice().as_ptr());
         }
     }
 
     pub fn set_float_array_uniform(&self, loc: i32, idx: usize, float: f32) {
         unsafe {
-            self.gl.Uniform1fv(loc, idx as i32, &float);
+            self.gl.Uniform1fv(loc + idx as i32, 1 as i32, &float);
         }
     }
 
