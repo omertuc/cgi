@@ -31,7 +31,7 @@ uniform vec4[MAX_LIGHTS] light_colors;
 uniform float[MAX_LIGHTS] light_radiuses;
 
 // Ambient lightning
-float ambient_strength = 0.03;
+float ambient_strength = 0.05;
 vec4 ambient_color = vec4((ambient_strength * vec3(1.0, 1.0, 1.0)).xyz, 1.0);
 
 void main()

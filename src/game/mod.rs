@@ -31,7 +31,7 @@ const SPIN_PER_MOUSE_PIXEL: f32 = TAU / 300f32;
 const ZOOM_PER_SCROLL_PIXEL: f32 = 0.1f32;
 const RUN_MULTIPLIER: f32 = 10f32;
 const WALK_MULTIPLIER: f32 = 0.1f32;
-const LIGHT_SPIN_SPEED: f32 = TAU / 8.0;
+const LIGHT_SPIN_SPEED: f32 = TAU;
 
 struct Settings {
     vsync: bool,
@@ -259,21 +259,55 @@ impl Game {
                 100.0,
                 Spotlight::new(
                     Color {
-                        r: 1.0,
-                        g: 1.0,
+                        r: 0.0,
+                        g: 0.0,
                         b: 1.0,
                         a: 1.0,
                     },
                     90.0,
                 )),
             GameLight::new(
-                TAU / 2.0,
+                TAU * 2.0 / 3.0,
                 Location {
                     x: 100.0,
                     y: 100.0,
                     z: 0.0,
                 },
                 100.0,
+                Spotlight::new(
+                    Color {
+                        r: 0.0,
+                        g: 1.0,
+                        b: 0.0,
+                        a: 1.0,
+                    },
+                    90.0,
+                )),
+            GameLight::new(
+                TAU / 3.0,
+                Location {
+                    x: 100.0,
+                    y: 100.0,
+                    z: 0.0,
+                },
+                100.0,
+                Spotlight::new(
+                    Color {
+                        r: 1.0,
+                        g: 0.0,
+                        b: 0.0,
+                        a: 1.0,
+                    },
+                    90.0,
+                )),
+            GameLight::new(
+                TAU / 3.0,
+                Location {
+                    x: 100.0,
+                    y: 100.0,
+                    z: 0.0,
+                },
+                10.0,
                 Spotlight::new(
                     Color {
                         r: 1.0,
@@ -326,12 +360,12 @@ impl Game {
     pub fn default_camera() -> Camera {
         Camera {
             location: Location {
-                x: 0f32,
+                x: 130f32,
                 y: 0f32,
-                z: 2f32,
+                z: 130f32,
             },
             orientation: Orientation {
-                pitch: 0f32,
+                pitch: TAU / 8.0,
                 roll: 0f32,
                 yaw: 0f32,
             },
