@@ -31,7 +31,6 @@ const SPIN_PER_MOUSE_PIXEL: f32 = TAU / 300f32;
 const ZOOM_PER_SCROLL_PIXEL: f32 = 0.1f32;
 const RUN_MULTIPLIER: f32 = 10f32;
 const WALK_MULTIPLIER: f32 = 0.1f32;
-const LIGHT_SPIN_SPEED: f32 = TAU;
 
 struct Settings {
     vsync: bool,
@@ -99,6 +98,7 @@ struct GameLight {
     center: Location,
     location: Location,
     spin_radius: f32,
+    spin_speed: f32,
 }
 
 impl Model for GameLight {
@@ -124,12 +124,13 @@ impl GameLight {
         self.location = Self::location_from_angle(self.center, self.angle, self.spin_radius);
     }
 
-    fn new(angle: f32, center: Location, spin_radius: f32, spotlight: Spotlight) -> Self {
+    fn new(angle: f32, center: Location, spin_radius: f32, spin_speed: f32, spotlight: Spotlight) -> Self {
         GameLight {
             spotlight,
             angle,
             center,
             spin_radius,
+            spin_speed,
             location: Self::location_from_angle(center, angle, spin_radius)
         }
     }
@@ -190,7 +191,7 @@ impl Game {
 
     fn spin_lights(&mut self, second_fraction: f32) {
         self.gamelights.iter_mut().for_each(|gamelight| {
-            gamelight.set_angle((gamelight.angle + second_fraction * LIGHT_SPIN_SPEED) % TAU);
+            gamelight.set_angle((gamelight.angle + second_fraction * gamelight.spin_speed) % TAU);
         });
     }
 
@@ -248,66 +249,19 @@ impl Game {
     }
 
     fn get_lights() -> Vec<GameLight> {
+        let spot_radius = 300.0;
+        let spin_speed = TAU / 20.0;
+        let z = 10.0;
         vec![
             GameLight::new(
                 0.0f32,
                 Location {
                     x: 100.0,
                     y: 100.0,
-                    z: 0.0,
+                    z,
                 },
                 100.0,
-                Spotlight::new(
-                    Color {
-                        r: 0.0,
-                        g: 0.0,
-                        b: 1.0,
-                        a: 1.0,
-                    },
-                    90.0,
-                )),
-            GameLight::new(
-                TAU * 2.0 / 3.0,
-                Location {
-                    x: 100.0,
-                    y: 100.0,
-                    z: 0.0,
-                },
-                100.0,
-                Spotlight::new(
-                    Color {
-                        r: 0.0,
-                        g: 1.0,
-                        b: 0.0,
-                        a: 1.0,
-                    },
-                    90.0,
-                )),
-            GameLight::new(
-                TAU / 3.0,
-                Location {
-                    x: 100.0,
-                    y: 100.0,
-                    z: 0.0,
-                },
-                100.0,
-                Spotlight::new(
-                    Color {
-                        r: 1.0,
-                        g: 0.0,
-                        b: 0.0,
-                        a: 1.0,
-                    },
-                    90.0,
-                )),
-            GameLight::new(
-                TAU / 3.0,
-                Location {
-                    x: 100.0,
-                    y: 100.0,
-                    z: 0.0,
-                },
-                10.0,
+                spin_speed,
                 Spotlight::new(
                     Color {
                         r: 1.0,
@@ -315,13 +269,67 @@ impl Game {
                         b: 1.0,
                         a: 1.0,
                     },
-                    90.0,
+                    spot_radius,
                 )),
+            // GameLight::new(
+            //     TAU * 2.0 / 3.0,
+            //     Location {
+            //         x: 100.0,
+            //         y: 100.0,
+            //         z,
+            //     },
+            //     100.0,
+            //     spin_speed,
+            //     Spotlight::new(
+            //         Color {
+            //             r: 1.0,
+            //             g: 1.0,
+            //             b: 1.0,
+            //             a: 1.0,
+            //         },
+            //         spot_radius,
+            //     )),
+            // GameLight::new(
+            //     TAU / 3.0,
+            //     Location {
+            //         x: 100.0,
+            //         y: 100.0,
+            //         z,
+            //     },
+            //     100.0,
+            //     spin_speed,
+            //     Spotlight::new(
+            //         Color {
+            //             r: 1.0,
+            //             g: 1.0,
+            //             b: 1.0,
+            //             a: 1.0,
+            //         },
+            //         spot_radius,
+            //     )),
+            // GameLight::new(
+            //     TAU / 3.0,
+            //     Location {
+            //         x: 100.0,
+            //         y: 100.0,
+            //         z: 0.0,
+            //     },
+            //     10.0,
+            //     TAU / 3.0,
+            //     Spotlight::new(
+            //         Color {
+            //             r: 1.0,
+            //             g: 1.0,
+            //             b: 1.0,
+            //             a: 1.0,
+            //         },
+            //         90.0,
+            //     )),
         ]
     }
 
     fn get_cubes() -> Vec<GameCube> {
-        let img = image::load_from_memory(include_bytes!("rs.png")).unwrap();
+        let img = image::load_from_memory(include_bytes!("bn.png")).unwrap();
 
         let mut cbs = vec![];
 

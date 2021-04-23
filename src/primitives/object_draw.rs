@@ -1,5 +1,5 @@
 use failure::Error;
-use nalgebra::{Matrix4, Vector4};
+use nalgebra::{Matrix4, Vector4, Vector3};
 
 use crate::primitives::spotlight::Spotlight;
 use crate::primitives::triangle::VertexData;
@@ -112,10 +112,10 @@ impl ObjectsDraw {
 
         let mut lights_count = 0;
         lights.enumerate().for_each(|(i, (light, location))| {
-            self.program.set_vec4_array_uniform(
+            self.program.set_vec3_array_uniform(
                 self.uniform_locs.light_positions,
                 i,
-                &Vector4::new(location.x, location.y, location.z, 1.0),
+                &Vector3::new(location.x, location.y, location.z),
             );
             self.program.set_float_array_uniform(
                 self.uniform_locs.light_radiuses,

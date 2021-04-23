@@ -42,7 +42,7 @@ impl Triangle {
         let bvec: Vector3<f32> = b.pos.into();
         let cvec: Vector3<f32> = c.pos.into();
 
-        let normal = (bvec - avec).cross(&(cvec - &avec)).normalize();
+        let normal = (bvec - avec).cross(&(cvec - &avec));
 
         Triangle {
             a: VertexData::new(a, normal),

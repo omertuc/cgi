@@ -2,7 +2,7 @@ use std;
 use std::ffi::{CStr, CString};
 
 use gl;
-use nalgebra::{Matrix4, Vector4};
+use nalgebra::{Matrix4, Vector4, Vector3};
 
 use crate::resources;
 use crate::resources::Resources;
@@ -184,6 +184,13 @@ impl Program {
         unsafe {
             self.gl
                 .Uniform4fv(loc + idx as i32, 1 as i32, vec.as_slice().as_ptr());
+        }
+    }
+
+    pub fn set_vec3_array_uniform(&self, loc: i32, idx: usize, vec: &Vector3<f32>) {
+        unsafe {
+            self.gl
+                .Uniform3fv(loc + idx as i32, 1 as i32, vec.as_slice().as_ptr());
         }
     }
 
