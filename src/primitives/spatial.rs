@@ -1,11 +1,44 @@
-use crate::render_gl::data::f32_f32_f32_f32;
+use std::ops::{Add, AddAssign, Mul};
+
 use nalgebra::{Vector3, Vector4};
+
+use crate::render_gl::data::f32_f32_f32_f32;
 
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Location {
     pub x: f32,
     pub y: f32,
     pub z: f32,
+}
+
+impl Add<Location> for Location {
+    type Output = Location;
+
+    fn add(self, rhs: Location) -> Self::Output {
+        return Location {
+            x: rhs.x + self.x,
+            y: rhs.y + self.y,
+            z: rhs.z + self.z,
+        };
+    }
+}
+
+impl AddAssign<Location> for Location {
+    fn add_assign(&mut self, rhs: Location) {
+        *self = *self + rhs;
+    }
+}
+
+impl Mul<f32> for Location {
+    type Output = Location;
+
+    fn mul(self, rhs: f32) -> Self::Output {
+        Location {
+            x: self.x * rhs,
+            y: self.y * rhs,
+            z: self.z * rhs,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

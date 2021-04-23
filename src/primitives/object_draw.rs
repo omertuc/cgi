@@ -6,6 +6,7 @@ use crate::primitives::triangle::VertexData;
 use crate::render_gl::buffer::{ArrayBuffer, VertexArray};
 use crate::render_gl::Program;
 use crate::resources::Resources;
+use crate::primitives::spatial::Location;
 
 pub struct ObjectUniforms {
     pub model_scale: i32,
@@ -106,13 +107,15 @@ impl ObjectsDraw {
         }
     }
 
-    pub fn set_spotlights(&self, lights: &Vec<Spotlight>) {
+    pub(crate) fn set_spotlights<'a>(&self, lights: impl Iterator<Item=(&'a Spotlight, &'a Location)>) {
         self.program.set_used();
-        lights.iter().enumerate().for_each(|(i, light)| {
+
+        let mut lights_count = 0;
+        lights.enumerate().for_each(|(i, (light, location))| {
             self.program.set_vec4_array_uniform(
                 self.uniform_locs.light_positions,
                 i,
-                &Vector4::new(light.location.x, light.location.y, light.location.z, 1.0),
+                &Vector4::new(location.x, location.y, location.z, 1.0),
             );
             self.program.set_float_array_uniform(
                 self.uniform_locs.light_radiuses,
@@ -123,11 +126,12 @@ impl ObjectsDraw {
                 self.uniform_locs.light_colors,
                 i,
                 &Vector4::new(light.color.r, light.color.g, light.color.b, light.color.a),
-            )
+            );
+            lights_count += 1;
         });
 
         self.program
-            .set_uint_uniform(self.uniform_locs.lights_count, lights.len());
+            .set_uint_uniform(self.uniform_locs.lights_count, lights_count);
     }
 
     pub fn set_view(&self, view_translation: &Matrix4<f32>, view_rotation: &Matrix4<f32>) {
