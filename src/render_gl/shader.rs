@@ -173,6 +173,12 @@ impl Program {
         }
     }
 
+    pub fn set_vec3_uniform(&self, loc: i32, vec: &Vector3<f32>) {
+        unsafe {
+            self.gl.Uniform3f(loc, vec[0], vec[1], vec[2]);
+        }
+    }
+
     pub fn set_mat4_uniform(&self, loc: i32, mat: &Matrix4<f32>) {
         unsafe {
             self.gl

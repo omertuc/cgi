@@ -17,8 +17,9 @@ uniform mat4 model_rotation;
 uniform mat4 model_translation;
 
 // View matrices
-uniform mat4 view_translation;
 uniform mat4 view_rotation;
+uniform mat4 view_translation;
+uniform vec3 view_location;
 
 // Projection matrix
 uniform mat4 projection;
@@ -26,41 +27,49 @@ uniform mat4 projection;
 // Spot lights
 #define MAX_LIGHTS 330u
 uniform uint lights_count;
-uniform vec3[MAX_LIGHTS] light_positions;
-uniform vec4[MAX_LIGHTS] light_colors;
+uniform vec3[MAX_LIGHTS] light_locations;
+uniform vec3[MAX_LIGHTS] light_colors;
 uniform float[MAX_LIGHTS] light_radiuses;
 
-// Ambient lightning
-float ambient_strength = 0.2;
-vec4 ambient_color = vec4((ambient_strength * vec3(1.0, 1.0, 1.0)), 1.0);
+// Ambient lighting
+float ambient_strength = 0.05;
+vec3 ambient_color = ambient_strength * vec3(1.0, 1.0, 1.0);
+
+// Specular lighting
+float specual_strength = 10;
 
 void main()
 {
-    vec3 vertex_world_position = (model_translation * model_rotation * vec4(model_scale * Position.xyz, 1.0)).xyz;
+    vec3 vertex_world_location = (model_translation * model_rotation * vec4(model_scale * Position.xyz, 1.0)).xyz;
     vec3 vertex_normal = (model_rotation * vec4(Normal, 1.0)).xyz;
 
-    vec4 final_color = ambient_color;
+    vec3 final_color = ambient_color;
     for (uint i = 0u; i < lights_count; i++) {
         // Get current light
-        vec3 light_position = light_positions[i];
-        vec4 light_color = light_colors[i];
+        vec3 light_location = light_locations[i];
+        vec3 light_color = light_colors[i];
         float light_radius = light_radiuses[i];
 
-        // Light direction
-        vec3 light_direction = light_position - vertex_world_position;
-        float diffuse = max(0.0, dot(normalize(vertex_normal), normalize(light_direction)));
-
         // Light distance / attenuation
-        float light_distance = distance(light_position, vertex_world_position);
+        float light_distance = distance(light_location, vertex_world_location);
         float light_attenuation = 1.0 - (min(light_distance, light_radius) / light_radius);
 
-        // Output final color
-        vec4 final_spot_color = light_attenuation * diffuse * light_color;
-        final_color += final_spot_color;
+        // Light direction
+        vec3 light_direction = light_location - vertex_world_location;
+        float diffuse = max(0.0, dot(normalize(vertex_normal), normalize(light_direction)));
+        vec3 diffuse_color = light_attenuation * diffuse * light_color;
+        final_color += diffuse_color;
+
+        // Specular
+        vec3 view_direction = normalize(view_location - vertex_world_location);
+        vec3 reflect_direction = normalize(reflect(-normalize(light_direction), normalize(vertex_normal)));
+        vec3 specular = specual_strength * pow(max(dot(view_direction, reflect_direction), 0.0), 32) * light_color * light_attenuation;
+
+        final_color += specular;
     }
 
-    OUT.Color = Color * final_color;
+    OUT.Color = Color * vec4(final_color, 1.0);
 
-    gl_Position = projection * view_translation * view_rotation * vec4(vertex_world_position, 1.0);
+    gl_Position = projection * view_rotation * view_translation * vec4(vertex_world_location, 1.0);
 
 }

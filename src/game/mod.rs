@@ -104,9 +104,9 @@ impl Game {
 
     fn wiggle_cubes(&mut self, second_fraction: f32) {
         let mut rng = self.rng.clone();
-        let rotspeed = std::f32::consts::TAU * second_fraction * 0.00001f32;
-        let movspeed = second_fraction * 0.00001f32;
-        let scalespeed = second_fraction * 0.00001f32;
+        let rotspeed = std::f32::consts::TAU * second_fraction * 1.0;
+        let movspeed = second_fraction * 0.1;
+        let scalespeed = second_fraction * 0.1;
 
         self.gamecubes.iter_mut().for_each(|gamecube| {
             gamecube.spatial.orientation = Orientation {
@@ -137,10 +137,10 @@ impl Game {
     }
 
     pub(crate) fn draw(&self, gl: &gl::Gl) {
-        let (view_translation, view_rotation) = self.camera.view();
+        let (view_rotation, view_translation, view_location) = self.camera.view();
 
         self.objects_draw
-            .set_view(&view_translation, &view_rotation);
+            .set_view(&view_rotation, &view_translation, &view_location);
 
         self.objects_draw.set_spotlights(
             self.gamelights

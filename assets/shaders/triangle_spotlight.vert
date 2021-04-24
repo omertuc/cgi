@@ -17,8 +17,8 @@ uniform mat4 model_rotation;
 uniform mat4 model_translation;
 
 // View matrices
-uniform mat4 view_translation;
 uniform mat4 view_rotation;
+uniform mat4 view_translation;
 
 // Projection matrix
 uniform mat4 projection;
@@ -28,8 +28,13 @@ uniform vec4 solid_color;
 
 void main()
 {
-    gl_Position = vec4(projection * view_translation * view_rotation * model_translation *
-                       model_rotation * vec4(model_scale * Position.xyz, 1.0));
+    gl_Position = vec4(
+        projection *
+        view_rotation *
+        view_translation *
+        model_translation *
+        model_rotation *
+        vec4(model_scale * Position.xyz, 1.0));
 
     // Intentionally ignore vertex color and use the solid color uniform instead
     OUT.Color = solid_color;
