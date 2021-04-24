@@ -31,15 +31,14 @@ impl Model for Spatial {
             self.orientation.yaw,
             self.orientation.roll,
         )
-            .to_homogeneous();
-
+        .to_homogeneous();
 
         let translation = Translation3::from(Vector3::new(
             self.location.x,
             self.location.y,
             self.location.z,
         ))
-            .to_homogeneous();
+        .to_homogeneous();
 
         return (self.scale, translation, rotation);
     }

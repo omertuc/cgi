@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Mul};
+use std::ops::{Add, AddAssign, Mul, Sub};
 
 use nalgebra::{Vector3, Vector4};
 
@@ -11,6 +11,12 @@ pub(crate) struct Location {
     pub z: f32,
 }
 
+impl Location {
+    pub fn new(x: f32, y: f32, z: f32) -> Location {
+        Location { x, y, z }
+    }
+}
+
 impl Add<Location> for Location {
     type Output = Location;
 
@@ -19,6 +25,18 @@ impl Add<Location> for Location {
             x: rhs.x + self.x,
             y: rhs.y + self.y,
             z: rhs.z + self.z,
+        };
+    }
+}
+
+impl Sub<f32> for Location {
+    type Output = Location;
+
+    fn sub(self, rhs: f32) -> Self::Output {
+        return Location {
+            x: self.x - rhs,
+            y: self.y - rhs,
+            z: self.z - rhs,
         };
     }
 }

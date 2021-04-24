@@ -15,7 +15,7 @@ pub struct VertexData {
 }
 
 impl VertexData {
-    fn new(vertex: Vertex, normal: Vector3<f32>) -> VertexData {
+    fn new(vertex: &Vertex, normal: Vector3<f32>) -> VertexData {
         VertexData {
             pos: vertex.pos.into(),
             clr: vertex.clr.into(),
@@ -24,6 +24,7 @@ impl VertexData {
     }
 }
 
+#[derive(Debug)]
 pub(crate) struct Vertex {
     pub pos: Location,
     pub clr: Color,
@@ -37,17 +38,17 @@ pub(crate) struct Triangle {
 }
 
 impl Triangle {
-    pub fn new(a: Vertex, b: Vertex, c: Vertex) -> Triangle {
-        let avec: Vector3<f32> = a.pos.into();
-        let bvec: Vector3<f32> = b.pos.into();
-        let cvec: Vector3<f32> = c.pos.into();
+    pub fn new(verticies: [Vertex; 3]) -> Triangle {
+        let avec: Vector3<f32> = verticies[0].pos.into();
+        let bvec: Vector3<f32> = verticies[1].pos.into();
+        let cvec: Vector3<f32> = verticies[2].pos.into();
 
         let normal = (bvec - avec).cross(&(cvec - &avec));
 
         Triangle {
-            a: VertexData::new(a, normal),
-            b: VertexData::new(b, normal),
-            c: VertexData::new(c, normal),
+            a: VertexData::new(&verticies[0], normal),
+            b: VertexData::new(&verticies[1], normal),
+            c: VertexData::new(&verticies[2], normal),
         }
     }
 

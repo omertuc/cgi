@@ -2,7 +2,7 @@ use std;
 use std::ffi::{CStr, CString};
 
 use gl;
-use nalgebra::{Matrix4, Vector4, Vector3};
+use nalgebra::{Matrix4, Vector3, Vector4};
 
 use crate::resources;
 use crate::resources::Resources;

@@ -1,79 +1,32 @@
 use nalgebra::Vector4;
 
+use crate::primitives::light::consts::WHITE;
 use crate::primitives::light::Color;
+use crate::primitives::spatial::Location;
 use crate::primitives::triangle::{Triangle, Vertex, VertexData};
+use std::convert::TryInto;
 
 pub(crate) struct Cube {
     pub verticies: Vec<VertexData>,
 }
 
 impl Cube {
-    pub(crate) fn new(
-        color: Color,
-    ) -> Self {
+    pub(crate) fn new(color: Color) -> Self {
         let alpha = 1f32;
 
-        let positions = vec![
-            (
-                (0.0, 0.0, 0.0),
-                (0.5, 0.5, 0.0),
-                (0.5, 0.0, 0.0),
-            ),
-            (
-                (0.0, 0.0, 0.0),
-                (0.0, 0.5, 0.0),
-                (0.5, 0.5, 0.0),
-            ),
-            (
-                (0.0, 0.0, 0.0),
-                (0.0, 0.0, 0.5),
-                (0.0, 0.5, 0.5),
-            ),
-            (
-                (0.0, 0.5, 0.0),
-                (0.0, 0.0, 0.0),
-                (0.0, 0.5, 0.5),
-            ),
-            (
-                (0.0, 0.0, 0.0),
-                (0.5, 0.0, 0.0),
-                (0.5, 0.0, 0.5),
-            ),
-            (
-                (0.0, 0.0, 0.5),
-                (0.0, 0.0, 0.0),
-                (0.5, 0.0, 0.5),
-            ),
-            (
-                (0.5, 0.5, 0.0),
-                (0.0, 0.5, 0.0),
-                (0.5, 0.5, 0.5),
-            ),
-            (
-                (0.0, 0.5, 0.0),
-                (0.0, 0.5, 0.5),
-                (0.5, 0.5, 0.5),
-            ),
-            (
-                (0.5, 0.0, 0.0),
-                (0.5, 0.5, 0.0),
-                (0.5, 0.0, 0.5),
-            ),
-            (
-                (0.5, 0.5, 0.0),
-                (0.5, 0.5, 0.5),
-                (0.5, 0.0, 0.5),
-            ),
-            (
-                (0.0, 0.0, 0.5),
-                (0.5, 0.0, 0.5),
-                (0.5, 0.5, 0.5),
-            ),
-            (
-                (0.0, 0.5, 0.5),
-                (0.0, 0.0, 0.5),
-                (0.5, 0.5, 0.5),
-            ),
+        let positions = [
+            [(0.0, 0.0, 0.0), (1.0, 1.0, 0.0), (1.0, 0.0, 0.0)],
+            [(0.0, 0.0, 0.0), (0.0, 1.0, 0.0), (1.0, 1.0, 0.0)],
+            [(0.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.0, 1.0, 1.0)],
+            [(0.0, 1.0, 0.0), (0.0, 0.0, 0.0), (0.0, 1.0, 1.0)],
+            [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (1.0, 0.0, 1.0)],
+            [(0.0, 0.0, 1.0), (0.0, 0.0, 0.0), (1.0, 0.0, 1.0)],
+            [(1.0, 1.0, 0.0), (0.0, 1.0, 0.0), (1.0, 1.0, 1.0)],
+            [(0.0, 1.0, 0.0), (0.0, 1.0, 1.0), (1.0, 1.0, 1.0)],
+            [(1.0, 0.0, 0.0), (1.0, 1.0, 0.0), (1.0, 0.0, 1.0)],
+            [(1.0, 1.0, 0.0), (1.0, 1.0, 1.0), (1.0, 0.0, 1.0)],
+            [(0.0, 0.0, 1.0), (1.0, 0.0, 1.0), (1.0, 1.0, 1.0)],
+            [(0.0, 1.0, 1.0), (0.0, 0.0, 1.0), (1.0, 1.0, 1.0)],
         ];
 
         let colors = vec![
@@ -141,32 +94,28 @@ impl Cube {
 
         let color_vec = Vector4::new(color.r, color.g, color.b, color.a);
 
+        let offset = 0.5;
+
         let triangles: Vec<Triangle> = positions
             .iter()
+            .map(|triangle_verticies| {
+                triangle_verticies
+                    .iter()
+                    .map(|v| Location::from(*v) - offset)
+            })
             .zip(colors)
             .map(|(p, _c)| {
                 Triangle::new(
-                    Vertex {
-                        pos: p.0.into(),
-                        clr: Vector4::<f32>::new(p.0.0, p.0.1, p.0.2, 1.0)
+                    p.map(|v| Vertex {
+                        pos: v,
+                        clr: Vector4::<f32>::new(v.x, v.y, v.z, 1.0)
                             .component_mul(&color_vec)
                             .as_slice()
                             .into(),
-                    },
-                    Vertex {
-                        pos: p.1.into(),
-                        clr: Vector4::<f32>::new(p.1.0, p.1.1, p.1.2, 1.0)
-                            .component_mul(&color_vec)
-                            .as_slice()
-                            .into(),
-                    },
-                    Vertex {
-                        pos: p.2.into(),
-                        clr: Vector4::<f32>::new(p.2.0, p.2.1, p.2.2, 1.0)
-                            .component_mul(&color_vec)
-                            .as_slice()
-                            .into(),
-                    },
+                    })
+                    .collect::<Vec<Vertex>>()
+                    .try_into()
+                    .unwrap(),
                 )
             })
             .collect();

@@ -1,12 +1,12 @@
 use failure::Error;
-use nalgebra::{Matrix4, Vector4, Vector3};
+use nalgebra::{Matrix4, Vector3, Vector4};
 
+use crate::primitives::spatial::Location;
 use crate::primitives::spotlight::Spotlight;
 use crate::primitives::triangle::VertexData;
 use crate::render_gl::buffer::{ArrayBuffer, VertexArray};
 use crate::render_gl::Program;
 use crate::resources::Resources;
-use crate::primitives::spatial::Location;
 
 pub struct ObjectUniforms {
     pub model_scale: i32,
@@ -107,7 +107,10 @@ impl ObjectsDraw {
         }
     }
 
-    pub(crate) fn set_spotlights<'a>(&self, lights: impl Iterator<Item=(&'a Spotlight, &'a Location)>) {
+    pub(crate) fn set_spotlights<'a>(
+        &self,
+        lights: impl Iterator<Item = (&'a Spotlight, &'a Location)>,
+    ) {
         self.program.set_used();
 
         let mut lights_count = 0;

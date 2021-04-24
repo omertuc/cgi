@@ -24,14 +24,14 @@ uniform mat4 view_rotation;
 uniform mat4 projection;
 
 // Spot lights
-#define MAX_LIGHTS 10u
+#define MAX_LIGHTS 330u
 uniform uint lights_count;
 uniform vec3[MAX_LIGHTS] light_positions;
 uniform vec4[MAX_LIGHTS] light_colors;
 uniform float[MAX_LIGHTS] light_radiuses;
 
 // Ambient lightning
-float ambient_strength = 0.05;
+float ambient_strength = 0.2;
 vec4 ambient_color = vec4((ambient_strength * vec3(1.0, 1.0, 1.0)), 1.0);
 
 void main()
@@ -40,7 +40,6 @@ void main()
     vec3 vertex_normal = (model_rotation * vec4(Normal, 1.0)).xyz;
 
     vec4 final_color = ambient_color;
-    float diffuse;
     for (uint i = 0u; i < lights_count; i++) {
         // Get current light
         vec3 light_position = light_positions[i];
@@ -49,7 +48,7 @@ void main()
 
         // Light direction
         vec3 light_direction = light_position - vertex_world_position;
-        diffuse = (dot(normalize(vertex_normal), normalize(light_direction)) + 1.0) / 2.0;
+        float diffuse = max(0.0, dot(normalize(vertex_normal), normalize(light_direction)));
 
         // Light distance / attenuation
         float light_distance = distance(light_position, vertex_world_position);
@@ -60,7 +59,6 @@ void main()
         final_color += final_spot_color;
     }
 
-//    OUT.Color = (Color * final_color * 0.00000001) + vec4(vec3(1.0, 1.0, 1.0) * diffuse, 1.0);
     OUT.Color = Color * final_color;
 
     gl_Position = projection * view_translation * view_rotation * vec4(vertex_world_position, 1.0);
