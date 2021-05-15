@@ -1,7 +1,7 @@
 use std::f32::consts::TAU;
 
 use image::{GenericImageView, Pixel};
-use nalgebra::{Matrix4, Vector4};
+use nalgebra::Vector4;
 use rand::rngs::ThreadRng;
 use rand::Rng;
 use sdl2::mouse::MouseWheelDirection;
@@ -21,7 +21,7 @@ use crate::primitives::light::Color;
 use crate::primitives::object_draw::ObjectsDraw;
 use crate::primitives::projection::perspective;
 use crate::primitives::spatial::{Location, Orientation};
-use crate::primitives::spotlight::{spot_radius_to_cube_scale, Spotlight};
+use crate::primitives::spotlight::Spotlight;
 use crate::primitives::spotlight_draw::SpotlightDraw;
 use crate::primitives::time::GameTime;
 use crate::primitives::triangle::VertexData;
@@ -210,7 +210,7 @@ impl Game {
             Spotlight::new(WHITE, 100.0),
         ));
 
-        for i in 1..101 {
+        for i in 1..11 {
             let spin_radius = 1.0 * i as f32;
             let angle_offset = (TAU / 1.61803) * i as f32;
             game_lights.push(GameLight::new(
