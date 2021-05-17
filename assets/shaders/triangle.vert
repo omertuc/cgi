@@ -32,11 +32,15 @@ uniform vec3[MAX_LIGHTS] light_colors;
 uniform float[MAX_LIGHTS] light_radiuses;
 
 // Ambient lighting
-float ambient_strength = 0.05;
+float ambient_strength = 0.35;
 vec3 ambient_color = ambient_strength * vec3(1.0, 1.0, 1.0);
 
 // Specular lighting
 float specual_strength = 10;
+
+float normal_dot_sat(vec3 v1, vec3 v2) {
+    return max(dot(normalize(v1), normalize(v2)), 0.0);
+}
 
 void main()
 {
@@ -56,14 +60,20 @@ void main()
 
         // Light direction
         vec3 light_direction = light_location - vertex_world_location;
-        float diffuse = max(0.0, dot(normalize(vertex_normal), normalize(light_direction)));
+        float diffuse = normal_dot_sat(vertex_normal, light_direction);
         vec3 diffuse_color = light_attenuation * diffuse * light_color;
         final_color += diffuse_color;
 
         // Specular
-        vec3 view_direction = normalize(view_location - vertex_world_location);
-        vec3 reflect_direction = normalize(reflect(-normalize(light_direction), normalize(vertex_normal)));
-        vec3 specular = specual_strength * pow(max(dot(view_direction, reflect_direction), 0.0), 32) * light_color * light_attenuation;
+//        vec3 view_direction = view_location - vertex_world_location;
+//        vec3 reflect_direction = reflect(-normalize(light_direction), normalize(vertex_normal));
+//        float spec_dot = normal_dot_sat(view_direction, reflect_direction);
+//        vec3 specular = specual_strength * pow(spec_dot, 32) * light_color * light_attenuation;
+
+        vec3 view_direction = view_location - vertex_world_location;
+        vec3 halfway = light_direction + view_direction;
+        float blinn = normal_dot_sat(vertex_normal, halfway);
+        vec3 specular = specual_strength * pow(blinn, 32) * light_color * light_attenuation;
 
         final_color += specular;
     }
