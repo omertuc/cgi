@@ -36,7 +36,8 @@ float ambient_strength = 0.35;
 vec3 ambient_color = ambient_strength * vec3(1.0, 1.0, 1.0);
 
 // Specular lighting
-float specual_strength = 10;
+float specular_strength = 10;
+float specular_roughness = 0.05;
 
 float normal_dot_sat(vec3 v1, vec3 v2) {
     return max(dot(normalize(v1), normalize(v2)), 0.0);
@@ -65,15 +66,12 @@ void main()
         final_color += diffuse_color;
 
         // Specular
-//        vec3 view_direction = view_location - vertex_world_location;
-//        vec3 reflect_direction = reflect(-normalize(light_direction), normalize(vertex_normal));
-//        float spec_dot = normal_dot_sat(view_direction, reflect_direction);
-//        vec3 specular = specual_strength * pow(spec_dot, 32) * light_color * light_attenuation;
-
         vec3 view_direction = view_location - vertex_world_location;
         vec3 halfway = light_direction + view_direction;
-        float blinn = normal_dot_sat(vertex_normal, halfway);
-        vec3 specular = specual_strength * pow(blinn, 32) * light_color * light_attenuation;
+        float angle = acos(dot(normalize(vertex_normal), normalize(halfway)));
+        float exponent = (angle / specular_roughness);
+        float term = exp(-(exponent * exponent));
+        vec3 specular = specular_strength * pow(term, 128) * light_color * light_attenuation;
 
         final_color += specular;
     }
