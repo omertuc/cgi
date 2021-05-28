@@ -26,6 +26,7 @@ use crate::primitives::spotlight_draw::SpotlightDraw;
 use crate::primitives::time::GameTime;
 use crate::primitives::triangle::VertexData;
 use crate::resources::Resources;
+use crate::models::suzanne::Suzanne;
 
 mod controls;
 mod gamecube;
@@ -104,9 +105,9 @@ impl Game {
 
     fn wiggle_cubes(&mut self, second_fraction: f32) {
         let mut rng = self.rng.clone();
-        let rotspeed = std::f32::consts::TAU * second_fraction * 1.0;
-        let movspeed = second_fraction * 0.1;
-        let scalespeed = second_fraction * 0.1;
+        let rotspeed = std::f32::consts::TAU * second_fraction * 0.0001;
+        let movspeed = second_fraction * 0.00001;
+        let scalespeed = second_fraction * 0.0001;
 
         self.gamecubes.iter_mut().for_each(|gamecube| {
             gamecube.spatial.orientation = Orientation {
@@ -148,9 +149,6 @@ impl Game {
                 .map(|gamelight| (&gamelight.spotlight, &gamelight.location)),
         );
 
-        self.spotslights_draw
-            .set_view(&view_translation, &view_rotation);
-
         let num_vertices = self.gamecubes[0].cube.verticies.len();
         self.objects_draw.prepare_for_draws();
         self.gamecubes.iter().enumerate().for_each(|(i, cube)| {
@@ -164,6 +162,9 @@ impl Game {
                 num_vertices * i,
             );
         });
+
+        self.spotslights_draw
+            .set_view(&view_translation, &view_rotation);
 
         let num_vertices = self.gamelights[0].spotlight.cube.verticies.len();
         self.spotslights_draw.prepare_for_draws();
@@ -193,11 +194,11 @@ impl Game {
 
     fn get_lights() -> Vec<GameLight> {
         let spot_radius = 15.0;
-        let spin_speed = TAU / 1000.0;
-        let z = 1.0;
+        let spin_speed = TAU / 100.0;
+        let z = 2.0;
         let center = Location {
-            x: 100.0,
-            y: 100.0,
+            x: 0.0,
+            y: 0.0,
             z,
         };
 
@@ -205,33 +206,34 @@ impl Game {
         game_lights.push(GameLight::new(
             TAU * 0.0 / 3.0,
             Location::new(center.x, center.y, 10.0),
-            150.0,
-            TAU / 10.0,
+            20.0,
+            TAU / 100.0,
             Spotlight::new(WHITE, 100.0),
         ));
 
-        for i in 1..11 {
-            let spin_radius = 1.0 * i as f32;
-            let angle_offset = (TAU / 1.61803) * i as f32;
+        let step = 3;
+        for i in (1..200).step_by(step) {
+            let spin_radius = 1.0 * i as f32 / step as f32;
+            let angle_offset = (TAU / 1.61803) * i as f32 / step as f32;
             game_lights.push(GameLight::new(
                 TAU * 0.0 / 3.0 + angle_offset,
                 center,
                 spin_radius,
-                spin_speed * i as f32,
+                spin_speed * i as f32 / step as f32,
                 Spotlight::new(RED, spot_radius),
             ));
             game_lights.push(GameLight::new(
                 TAU * 1.0 / 3.0 + angle_offset,
                 center,
                 spin_radius,
-                spin_speed * i as f32,
+                spin_speed * i as f32 / step as f32,
                 Spotlight::new(GREEN, spot_radius),
             ));
             game_lights.push(GameLight::new(
                 TAU * 2.0 / 3.0 + angle_offset,
                 center,
                 spin_radius,
-                spin_speed * i as f32,
+                spin_speed * i as f32 / step as f32,
                 Spotlight::new(BLUE, spot_radius),
             ));
         }
@@ -246,16 +248,17 @@ impl Game {
 
         let (w, h) = img.dimensions();
 
-        for i in 0..w {
-            for j in 0..h {
+        let step = 50;
+        for i in (0..w).step_by(step) {
+            for j in (0..h).step_by(step) {
                 let spatial = Spatial::new(
                     Location {
-                        x: 0f32 + (i as f32 * 1.5f32),
-                        y: 0f32 + (j as f32 * 1.5f32),
+                        x: 0f32 + (i as f32 / step as f32) * 3.3,
+                        y: 0f32 + (j as f32 / step as f32) * 3.3,
                         z: 0.0,
                     },
                     Orientation::default(),
-                    1.0,
+                    0.1,
                 );
 
                 let color = Color {
@@ -265,7 +268,7 @@ impl Game {
                     a: 1.0,
                 };
 
-                let cube = Cube::new(color);
+                let cube = Suzanne::new(color);
 
                 game_cubes.push(GameCube::new(spatial, cube));
             }

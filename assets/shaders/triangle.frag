@@ -24,7 +24,7 @@ vec3 ambient_color = ambient_strength * vec3(1.0, 1.0, 1.0);
 
 // Specular lighting
 float specular_strength = 10;
-float specular_roughness = 0.3;
+float specular_roughness = 0.8;
 
 float normal_dot_sat(vec3 v1, vec3 v2) {
     return max(dot(normalize(v1), normalize(v2)), 0.0);

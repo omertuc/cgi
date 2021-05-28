@@ -16,6 +16,9 @@ pub mod consts {
     pub const BLUE: Color = Color::new(0.0, 0.0, 1.0);
     pub const WHITE: Color = Color::new(1.0, 1.0, 1.0);
     pub const BLACK: Color = Color::new(0.0, 0.0, 0.0);
+    pub const LIGHT_GRAY: Color = Color::new(0.7, 0.7, 0.7);
+    pub const GRAY: Color = Color::new(0.5, 0.5, 0.5);
+    pub const DARK_GRAY: Color = Color::new(0.3, 0.3, 0.3);
 }
 
 impl Color {

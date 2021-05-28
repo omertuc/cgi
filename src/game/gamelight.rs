@@ -36,8 +36,8 @@ impl GameLight {
         center
             + Location {
                 x: center.x + spin_radius * angle.cos(),
-                y: center.y + spin_radius * angle.sin(),
-                z: center.z,
+                y: center.y + spin_radius * angle.cos(),
+                z: center.z + angle * 100.0,
             }
     }
 

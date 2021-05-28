@@ -15,7 +15,7 @@ pub struct VertexData {
 }
 
 impl VertexData {
-    fn new(vertex: &Vertex, normal: Vector3<f32>) -> VertexData {
+    pub(crate) fn new(vertex: &Vertex, normal: Vector3<f32>) -> VertexData {
         VertexData {
             pos: vertex.pos.into(),
             clr: vertex.clr.into(),
@@ -45,6 +45,14 @@ impl Triangle {
 
         let normal = (bvec - avec).cross(&(cvec - &avec));
 
+        Triangle {
+            a: VertexData::new(&verticies[0], normal),
+            b: VertexData::new(&verticies[1], normal),
+            c: VertexData::new(&verticies[2], normal),
+        }
+    }
+
+    pub fn new_with_normals(verticies: [Vertex; 3], normal: Vector3<f32>) -> Triangle {
         Triangle {
             a: VertexData::new(&verticies[0], normal),
             b: VertexData::new(&verticies[1], normal),

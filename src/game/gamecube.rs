@@ -1,14 +1,15 @@
 use crate::models::cube::Cube;
 use crate::models::world_model::{Model, Spatial};
 use nalgebra::Matrix4;
+use crate::models::suzanne::Suzanne;
 
 pub(crate) struct GameCube {
-    pub(crate) cube: Cube,
+    pub(crate) cube: Suzanne,
     pub(crate) spatial: Spatial,
 }
 
 impl GameCube {
-    pub fn new(spatial: Spatial, cube: Cube) -> Self {
+    pub fn new(spatial: Spatial, cube: Suzanne) -> Self {
         GameCube { cube, spatial }
     }
 }

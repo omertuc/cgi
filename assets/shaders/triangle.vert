@@ -29,12 +29,9 @@ uniform mat4 projection;
 void main()
 {
     vec3 vertex_world_location = (model_translation * model_rotation * vec4(model_scale * Position.xyz, 1.0)).xyz;
-    vec3 vertex_normal = (model_rotation * vec4(Normal, 1.0)).xyz;
-    OUT.Normal = vertex_normal;
-    OUT.WorldCoords = vertex_world_location;
-
-    OUT.Color = Color;
-
     gl_Position = projection * view_rotation * view_translation * vec4(vertex_world_location, 1.0);
 
+    OUT.Color = Color;
+    OUT.Normal = (model_rotation * vec4(Normal, 1.0)).xyz;
+    OUT.WorldCoords = vertex_world_location;
 }

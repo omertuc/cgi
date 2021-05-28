@@ -8,7 +8,7 @@ pub struct Spotlight {
 }
 
 pub fn spot_radius_to_cube_scale(spot_radius: f32) -> f32 {
-    return spot_radius / 10.0;
+    return spot_radius / 50.0;
 }
 
 impl Spotlight {
