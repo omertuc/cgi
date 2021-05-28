@@ -106,8 +106,8 @@ impl Game {
     fn wiggle_cubes(&mut self, second_fraction: f32) {
         let mut rng = self.rng.clone();
         let rotspeed = std::f32::consts::TAU * second_fraction * 0.0001;
-        let movspeed = second_fraction * 0.00001;
-        let scalespeed = second_fraction * 0.0001;
+        let movspeed = second_fraction * 1.1;
+        let scalespeed = second_fraction * 9.1;
 
         self.gamecubes.iter_mut().for_each(|gamecube| {
             gamecube.spatial.orientation = Orientation {
