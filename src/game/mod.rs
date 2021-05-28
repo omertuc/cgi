@@ -258,7 +258,7 @@ impl Game {
                         z: 0.0,
                     },
                     Orientation::default(),
-                    0.1,
+                    5.0,
                 );
 
                 let color = Color {

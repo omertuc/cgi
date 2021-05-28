@@ -1,6 +1,9 @@
-import struct
+#!/usr/bin/env python3
 
-with open("suzanne.obj") as f:
+import struct
+import sys
+
+with open(sys.argv[1]) as f:
     lines = f.readlines()
 
 faces = [line[2:] for line in lines if line.startswith("f ")]
@@ -10,10 +13,12 @@ normals = [line[3:] for line in lines if line.startswith("vn ")]
 vs = []
 ns = []
 
+
 def add(vertex):
     v, t, n = map(int, vertex.split('/'))
     vs.append(list(map(float, vertices[v - 1].strip().split())))
     ns.append(list(map(float, normals[n - 1].strip().split())))
+
 
 for face in faces:
     verticies = face.strip().split()
