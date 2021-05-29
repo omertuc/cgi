@@ -20,23 +20,27 @@ impl Camera {
         }
     }
 
-    pub fn view(&self) -> (Matrix4<f32>, Matrix4<f32>, Vector3<f32>) {
-        let rotation = Rotation3::from_euler_angles(
+    pub fn rotation_matrix(&self) -> Matrix4<f32> {
+        Rotation3::from_euler_angles(
             // TODO: for some reason these make more sense when roll is pitch,
             // pitch is yaw, and yaw is roll. Should probably investigate why.
-            -self.orientation.pitch,
-            -self.orientation.yaw,
             -self.orientation.roll,
+            -self.orientation.yaw,
+            -self.orientation.pitch,
         )
-        .to_homogeneous();
+            .to_homogeneous()
+    }
 
-        let translation = Translation3::from(Vector3::new(
+    pub fn translation_matrix(&self) -> Matrix4<f32> {
+        Translation3::from(Vector3::new(
             -self.location.x,
             -self.location.y,
             -self.location.z,
         ))
-        .to_homogeneous();
+            .to_homogeneous()
+    }
 
-        (rotation, translation, self.location.into())
+    pub fn view(&self) -> (Matrix4<f32>, Matrix4<f32>, Vector3<f32>) {
+        (self.rotation_matrix(), self.translation_matrix(), self.location.into())
     }
 }

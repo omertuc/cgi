@@ -1,3 +1,6 @@
+use rand::Rng;
+use rand::rngs::ThreadRng;
+
 use crate::render_gl::data::u2_u10_u10_u10_rev_float;
 
 #[derive(Debug, Clone, Copy)]
@@ -26,10 +29,16 @@ impl Color {
         Self { r, g, b, a: 1.0 }
     }
 
+    pub fn random(rng: &mut ThreadRng) -> Self {
+        Color::new(rng.gen_range(0.0..1.0),
+                   rng.gen_range(0.0..1.0),
+                   rng.gen_range(0.0..1.0))
+    }
     pub const fn new_with_alpha(r: f32, g: f32, b: f32, a: f32) -> Self {
         Self { r, g, b, a }
     }
 }
+
 
 impl From<(f32, f32, f32, f32)> for Color {
     fn from(other: (f32, f32, f32, f32)) -> Self {

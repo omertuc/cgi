@@ -1,15 +1,15 @@
 use std::f32::consts::TAU;
 
 use image::{GenericImageView, Pixel};
-use nalgebra::Vector4;
-use rand::rngs::ThreadRng;
+use nalgebra::{Vector3, Vector4};
 use rand::Rng;
+use rand::rngs::ThreadRng;
 use sdl2::mouse::MouseWheelDirection;
 
 use controls::GameKey;
 use controls::KeyMap;
 
-use crate::game::controls::{init_key_map, GameKeyStack};
+use crate::game::controls::{GameKeyStack, init_key_map};
 use crate::game::gamecube::GameCube;
 use crate::game::gamelight::GameLight;
 use crate::models::cube::Cube;
@@ -17,8 +17,8 @@ use crate::models::suzanne::Suzanne;
 use crate::models::world_model::{Model, Spatial};
 use crate::primitives::camera::Camera;
 use crate::primitives::input::{KeyStack, MouseMovement};
-use crate::primitives::light::consts::{BLUE, GREEN, RED, WHITE};
 use crate::primitives::light::Color;
+use crate::primitives::light::consts::{BLUE, GREEN, RED, WHITE};
 use crate::primitives::object_draw::ObjectsDraw;
 use crate::primitives::projection::perspective;
 use crate::primitives::spatial::{Location, Orientation};
@@ -64,9 +64,9 @@ pub(crate) struct Game {
     pitch_per_second: f32,
 
     // movement
-    x_per_second: f32,
-    y_per_second: f32,
-    z_per_second: f32,
+    move_per_second: f32,
+    strafe_per_second: f32,
+    fly_per_second: f32,
 
     // sdl
     video_subsystem: sdl2::VideoSubsystem,
@@ -98,9 +98,17 @@ impl Game {
     }
 
     pub fn apply_camera_movement(&mut self, second_fraction: f32) {
-        self.camera.location.x += self.x_per_second * second_fraction;
-        self.camera.location.y += self.y_per_second * second_fraction;
-        self.camera.location.z += self.z_per_second * second_fraction;
+        // let strafe = rotation * Vector4::<f32>::new(self.strafe_per_second, 0.0, 0.0, 1.0);
+        // let fly = rotation * Vector4::<f32>::new(0.0, self.fly_per_second, 0.0, 1.0);
+        // let combined = (movement + strafe + fly) * second_fraction;
+
+        let movement = self.move_per_second * self.camera.rotation_matrix() * Vector4::<f32>::new(0.0, 0.0, -1.0, 0.0);
+
+        let combined = movement * second_fraction;
+
+        self.camera.location.x += combined.x;
+        self.camera.location.y += combined.y;
+        self.camera.location.z += combined.z;
     }
 
     fn wiggle_cubes(&mut self, second_fraction: f32) {
@@ -192,7 +200,7 @@ impl Game {
             });
     }
 
-    fn get_lights() -> Vec<GameLight> {
+    fn get_lights(rng: &mut ThreadRng) -> Vec<GameLight> {
         let spot_radius = 15.0;
         let spin_speed = TAU / 100.0;
         let z = 2.0;
@@ -216,21 +224,21 @@ impl Game {
                 center,
                 spin_radius,
                 spin_speed * i as f32 / step as f32,
-                Spotlight::new(RED, spot_radius),
+                Spotlight::new(Color::random(rng), spot_radius),
             ));
             game_lights.push(GameLight::new(
                 TAU * 1.0 / 3.0 + angle_offset,
                 center,
                 spin_radius,
                 spin_speed * i as f32 / step as f32,
-                Spotlight::new(GREEN, spot_radius),
+                Spotlight::new(Color::random(rng), spot_radius),
             ));
             game_lights.push(GameLight::new(
                 TAU * 2.0 / 3.0 + angle_offset,
                 center,
                 spin_radius,
                 spin_speed * i as f32 / step as f32,
-                Spotlight::new(BLUE, spot_radius),
+                Spotlight::new(Color::random(rng), spot_radius),
             ));
         }
 
@@ -303,7 +311,9 @@ impl Game {
             .flat_map(|c| c.cube.verticies.clone())
             .collect();
 
-        let gamelights = Self::get_lights();
+        let mut rng = rand::thread_rng();
+
+        let gamelights = Self::get_lights(&mut rng);
         let spot_verticies: Vec<VertexData> = gamelights
             .iter()
             .flat_map(|g| g.spotlight.cube.verticies.clone())
@@ -311,8 +321,8 @@ impl Game {
 
         let spotlight_draw = SpotlightDraw::new(&res, &gl, spot_verticies)?;
 
-        let mut game = Game {
-            rng: rand::thread_rng(),
+        let mut game = Self {
+            rng,
 
             ongoing: true,
 
@@ -328,9 +338,9 @@ impl Game {
             pitch_per_second: 0f32,
 
             // Default movement speed
-            x_per_second: 0f32,
-            y_per_second: 0f32,
-            z_per_second: 0f32,
+            move_per_second: 0f32,
+            strafe_per_second: 0f32,
+            fly_per_second: 0f32,
 
             camera: Self::default_camera(),
 
@@ -387,27 +397,27 @@ impl Game {
     pub fn handle_keyboard_movement(&mut self, normalized: GameKeyStack) {
         let speed = MOVEMENT_PER_SECOND
             * if normalized.is_pressed(GameKey::Run) {
-                RUN_MULTIPLIER
-            } else if normalized.is_pressed(GameKey::Walk) {
-                WALK_MULTIPLIER
-            } else {
-                1f32
-            };
+            RUN_MULTIPLIER
+        } else if normalized.is_pressed(GameKey::Walk) {
+            WALK_MULTIPLIER
+        } else {
+            1f32
+        };
 
         if normalized.is_pressed(GameKey::Forward) {
-            self.z_per_second = -speed;
+            self.move_per_second = -speed;
         } else if normalized.is_pressed(GameKey::Backwards) {
-            self.z_per_second = speed;
+            self.move_per_second = speed;
         } else {
-            self.z_per_second = 0f32;
+            self.move_per_second= 0f32;
         }
 
         if normalized.is_pressed(GameKey::Right) {
-            self.x_per_second = speed;
+            self.strafe_per_second = speed;
         } else if normalized.is_pressed(GameKey::Left) {
-            self.x_per_second = -speed;
+            self.strafe_per_second = -speed;
         } else {
-            self.x_per_second = 0f32;
+            self.strafe_per_second = 0f32;
         }
     }
 
@@ -441,12 +451,12 @@ impl Game {
             MouseWheelDirection::Unknown(..) => 0f32,
         }) * ZOOM_PER_SCROLL_PIXEL
             * if self.key_stack.normalize().is_pressed(GameKey::Run) {
-                RUN_MULTIPLIER
-            } else if self.key_stack.normalize().is_pressed(GameKey::Walk) {
-                WALK_MULTIPLIER
-            } else {
-                1f32
-            }
+            RUN_MULTIPLIER
+        } else if self.key_stack.normalize().is_pressed(GameKey::Walk) {
+            WALK_MULTIPLIER
+        } else {
+            1f32
+        }
     }
 
     pub fn input_handler(&mut self, event: sdl2::event::Event) {
