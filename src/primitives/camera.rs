@@ -1,4 +1,4 @@
-use nalgebra::{Matrix4, Rotation3, Translation3, Vector3};
+use nalgebra::{Matrix4, Rotation3, Translation3, Vector3, Unit, Matrix3};
 
 use crate::primitives::spatial::{Location, Orientation};
 
@@ -20,15 +20,20 @@ impl Camera {
         }
     }
 
-    pub fn rotation_matrix(&self) -> Matrix4<f32> {
-        Rotation3::from_euler_angles(
-            // TODO: for some reason these make more sense when roll is pitch,
-            // pitch is yaw, and yaw is roll. Should probably investigate why.
-            -self.orientation.roll,
-            -self.orientation.yaw,
-            -self.orientation.pitch,
-        )
-            .to_homogeneous()
+    pub fn view_matrix(&self) -> Matrix4<f32> {
+        let yaw = Rotation3::from_axis_angle(&Vector3::y_axis(), -self.orientation.yaw).to_homogeneous();
+        let pitch = Rotation3::from_axis_angle(&Vector3::x_axis(), -self.orientation.pitch).to_homogeneous();
+        let roll = Rotation3::from_axis_angle(&Vector3::z_axis(), -self.orientation.roll).to_homogeneous();
+
+        yaw * pitch * roll
+    }
+
+    pub fn rotation_matrix(&self) -> Matrix3<f32> {
+        let yaw = Rotation3::from_axis_angle(&Vector3::y_axis(), self.orientation.yaw).matrix().clone();
+        let pitch = Rotation3::from_axis_angle(&Vector3::x_axis(), self.orientation.pitch).matrix().clone();
+        let roll = Rotation3::from_axis_angle(&Vector3::z_axis(), self.orientation.roll).matrix().clone();
+
+        yaw * pitch * roll
     }
 
     pub fn translation_matrix(&self) -> Matrix4<f32> {
@@ -41,6 +46,6 @@ impl Camera {
     }
 
     pub fn view(&self) -> (Matrix4<f32>, Matrix4<f32>, Vector3<f32>) {
-        (self.rotation_matrix(), self.translation_matrix(), self.location.into())
+        (self.view_matrix(), self.translation_matrix(), self.location.into())
     }
 }

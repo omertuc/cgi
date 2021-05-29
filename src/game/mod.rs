@@ -98,13 +98,12 @@ impl Game {
     }
 
     pub fn apply_camera_movement(&mut self, second_fraction: f32) {
-        // let strafe = rotation * Vector4::<f32>::new(self.strafe_per_second, 0.0, 0.0, 1.0);
-        // let fly = rotation * Vector4::<f32>::new(0.0, self.fly_per_second, 0.0, 1.0);
-        // let combined = (movement + strafe + fly) * second_fraction;
 
-        let movement = self.move_per_second * self.camera.rotation_matrix() * Vector4::<f32>::new(0.0, 0.0, -1.0, 0.0);
+        let movement = self.move_per_second * self.camera.rotation_matrix() * Vector3::<f32>::new(0.0, 0.0, 1.0);
+        let strafe = self.strafe_per_second * self.camera.rotation_matrix() * Vector3::<f32>::new(1.0, 0.0, 0.0);
+        let fly = self.fly_per_second * self.camera.rotation_matrix() * Vector3::<f32>::new(0.0, 1.0, 0.0);
 
-        let combined = movement * second_fraction;
+        let combined = (movement + strafe + fly) * second_fraction;
 
         self.camera.location.x += combined.x;
         self.camera.location.y += combined.y;
@@ -216,7 +215,7 @@ impl Game {
         ));
 
         let step = 3;
-        for i in (1..200).step_by(step) {
+        for i in (1..10).step_by(step) {
             let spin_radius = 1.0 * i as f32 / step as f32;
             let angle_offset = (TAU / 1.61803) * i as f32 / step as f32;
             game_lights.push(GameLight::new(
@@ -409,7 +408,7 @@ impl Game {
         } else if normalized.is_pressed(GameKey::Backwards) {
             self.move_per_second = speed;
         } else {
-            self.move_per_second= 0f32;
+            self.move_per_second = 0f32;
         }
 
         if normalized.is_pressed(GameKey::Right) {
