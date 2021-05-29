@@ -2,12 +2,12 @@ use std::convert::TryInto;
 
 use nalgebra::{Vector3, Vector4};
 
+use crate::primitives::light::consts::{BLACK, DARK_GRAY, LIGHT_GRAY, WHITE};
 use crate::primitives::light::Color;
-use crate::primitives::light::consts::{WHITE, BLACK, LIGHT_GRAY, DARK_GRAY};
 use crate::primitives::spatial::Location;
 use crate::primitives::triangle::{Triangle, Vertex, VertexData};
-use std::path::Prefix::Verbatim;
 use std::mem::transmute;
+use std::path::Prefix::Verbatim;
 
 pub(crate) struct Suzanne {
     pub verticies: Vec<VertexData>,
@@ -32,21 +32,26 @@ impl Suzanne {
 
         const VWN_SIZE: usize = std::mem::size_of::<VertexWithNormal>();
 
-        let verticies: Vec<VertexData> = suzanne_cgi.chunks(VWN_SIZE).map(|raw|
-            unsafe { transmute::<[u8; VWN_SIZE], VertexWithNormal>(raw.try_into().unwrap()) }
-        ).map(|vwn|
-            VertexData::new(&Vertex {
-                pos: Location::new(vwn.vx as f32, vwn.vy as f32, vwn.vz as f32),
-                clr: DARK_GRAY,
-            }, Vector3::new(vwn.nx as f32, vwn.ny as f32, vwn.nz as f32))
-        ).collect();
+        let verticies: Vec<VertexData> = suzanne_cgi
+            .chunks(VWN_SIZE)
+            .map(|raw| unsafe {
+                transmute::<[u8; VWN_SIZE], VertexWithNormal>(raw.try_into().unwrap())
+            })
+            .map(|vwn| {
+                VertexData::new(
+                    &Vertex {
+                        pos: Location::new(vwn.vx as f32, vwn.vy as f32, vwn.vz as f32),
+                        clr: DARK_GRAY,
+                    },
+                    Vector3::new(vwn.nx as f32, vwn.ny as f32, vwn.nz as f32),
+                )
+            })
+            .collect();
 
         dbg!(verticies[0]);
         dbg!(verticies[1000]);
 
-        let cube = Suzanne {
-            verticies
-        };
+        let cube = Suzanne { verticies };
 
         cube
     }

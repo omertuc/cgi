@@ -13,6 +13,7 @@ use crate::game::controls::{init_key_map, GameKeyStack};
 use crate::game::gamecube::GameCube;
 use crate::game::gamelight::GameLight;
 use crate::models::cube::Cube;
+use crate::models::suzanne::Suzanne;
 use crate::models::world_model::{Model, Spatial};
 use crate::primitives::camera::Camera;
 use crate::primitives::input::{KeyStack, MouseMovement};
@@ -26,7 +27,6 @@ use crate::primitives::spotlight_draw::SpotlightDraw;
 use crate::primitives::time::GameTime;
 use crate::primitives::triangle::VertexData;
 use crate::resources::Resources;
-use crate::models::suzanne::Suzanne;
 
 mod controls;
 mod gamecube;
@@ -196,11 +196,7 @@ impl Game {
         let spot_radius = 15.0;
         let spin_speed = TAU / 100.0;
         let z = 2.0;
-        let center = Location {
-            x: 0.0,
-            y: 0.0,
-            z,
-        };
+        let center = Location { x: 0.0, y: 0.0, z };
 
         let mut game_lights = vec![];
         game_lights.push(GameLight::new(

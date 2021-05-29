@@ -1,3 +1,3 @@
 pub mod cube;
-pub mod world_model;
 pub mod suzanne;
+pub mod world_model;

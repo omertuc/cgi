@@ -1,7 +1,7 @@
 use crate::models::cube::Cube;
+use crate::models::suzanne::Suzanne;
 use crate::models::world_model::{Model, Spatial};
 use nalgebra::Matrix4;
-use crate::models::suzanne::Suzanne;
 
 pub(crate) struct GameCube {
     pub(crate) cube: Suzanne,
