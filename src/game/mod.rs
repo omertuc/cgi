@@ -112,9 +112,9 @@ impl Game {
 
     fn wiggle_cubes(&mut self, second_fraction: f32) {
         let mut rng = self.rng.clone();
-        let rotspeed = std::f32::consts::TAU * second_fraction * 0.0001;
-        let movspeed = second_fraction * 1.1;
-        let scalespeed = second_fraction * 9.1;
+        let rotspeed = std::f32::consts::TAU * second_fraction * 0.03;
+        let movspeed = second_fraction * 0.1;
+        let scalespeed = second_fraction * 0.1;
 
         self.gamecubes.iter_mut().for_each(|gamecube| {
             gamecube.spatial.orientation = Orientation {
@@ -199,6 +199,23 @@ impl Game {
             });
     }
 
+    fn lerp(t: f32, a: Location, b: Location) -> Location {
+        return Location { 
+            x: a.x * t + b.x * (1.0 - t),
+            y: a.y * t + b.y * (1.0 - t),
+            z: a.z * t + b.z * (1.0 - t),
+        }
+    }
+
+    fn cubic(t: f32, a: Location, b: Location, c: Location, d: Location) -> Location {
+        let e = Self::lerp(t, a, b);
+        let f = Self::lerp(t, b, c);
+        let g = Self::lerp(t, c, d);
+        let h = Self::lerp(t, e, f);
+        let i = Self::lerp(t, f, g);
+        Self::lerp(t, h, i)
+    }
+
     fn get_lights(rng: &mut ThreadRng) -> Vec<GameLight> {
         let spot_radius = 15.0;
         let spin_speed = TAU / 100.0;
@@ -215,7 +232,7 @@ impl Game {
         ));
 
         let step = 3;
-        for i in (1..10).step_by(step) {
+        for i in (1..200).step_by(step) {
             let spin_radius = 1.0 * i as f32 / step as f32;
             let angle_offset = (TAU / 1.61803) * i as f32 / step as f32;
             game_lights.push(GameLight::new(
@@ -226,7 +243,7 @@ impl Game {
                 Spotlight::new(Color::random(rng), spot_radius),
             ));
             game_lights.push(GameLight::new(
-                TAU * 1.0 / 3.0 + angle_offset,
+                TAU * 0.0 / 3.0 + angle_offset,
                 center,
                 spin_radius,
                 spin_speed * i as f32 / step as f32,
@@ -236,6 +253,50 @@ impl Game {
                 TAU * 2.0 / 3.0 + angle_offset,
                 center,
                 spin_radius,
+                spin_speed * i as f32 / step as f32,
+                Spotlight::new(Color::random(rng), spot_radius),
+            ));
+        }
+
+        game_lights
+    }
+
+    fn get_lights2(rng: &mut ThreadRng) -> Vec<GameLight> {
+        let spot_radius = 15.0;
+        let spin_speed = TAU / 100.0;
+        let z = 2.0;
+
+        let mut game_lights = vec![];
+
+        let step = 3;
+        for i in (1..200).step_by(step) {
+            let t = i as f32 / 200f32;
+            let location = Self::cubic(t,
+                Location { 
+                    x: 0.0f32,
+                    y: 0.0f32,
+                    z: 0.0f32,
+                },
+                Location { 
+                    x: 0.0f32,
+                    y: 15.0f32,
+                    z: 0.0f32,
+                },
+                Location { 
+                    x: 20.0f32,
+                    y: 0.0f32,
+                    z: 0.0f32,
+                },
+                Location { 
+                    x: 0.0f32,
+                    y: 0.0f32,
+                    z: 15.0f32,
+                },
+            );
+            game_lights.push(GameLight::new(
+                0.0,
+                location,
+                0.0,
                 spin_speed * i as f32 / step as f32,
                 Spotlight::new(Color::random(rng), spot_radius),
             ));
@@ -312,7 +373,7 @@ impl Game {
 
         let mut rng = rand::thread_rng();
 
-        let gamelights = Self::get_lights(&mut rng);
+        let gamelights = Self::get_lights2(&mut rng);
         let spot_verticies: Vec<VertexData> = gamelights
             .iter()
             .flat_map(|g| g.spotlight.cube.verticies.clone())
