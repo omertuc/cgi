@@ -2,12 +2,11 @@ use std::convert::TryInto;
 
 use nalgebra::{Vector3, Vector4};
 
-use crate::primitives::light::consts::{BLACK, DARK_GRAY, LIGHT_GRAY, WHITE};
+use crate::primitives::light::consts::DARK_GRAY;
 use crate::primitives::light::Color;
 use crate::primitives::spatial::Location;
-use crate::primitives::triangle::{Triangle, Vertex, VertexData};
+use crate::primitives::triangle::{Vertex, VertexData};
 use std::mem::transmute;
-use std::path::Prefix::Verbatim;
 
 pub(crate) struct Suzanne {
     pub verticies: Vec<VertexData>,
