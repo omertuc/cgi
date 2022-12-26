@@ -78,7 +78,7 @@ fn run() -> Result<(), failure::Error> {
         res,
         &gl,
         timer_subsystem.performance_counter(),
-        timer_subsystem.performance_frequency(),
+        dbg!(timer_subsystem.performance_frequency()),
         TICK_LENGTH_US,
         video_subsystem,
         (viewport.w / viewport.h) as f32,

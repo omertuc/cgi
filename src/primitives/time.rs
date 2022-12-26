@@ -9,7 +9,7 @@ pub struct GameTime {
 
 impl GameTime {
     pub fn new(timer_frequency: u64, tick_length_us: u64, initial_time: u64) -> GameTime {
-        let counter_per_us: u64 = US_PER_SECOND / timer_frequency;
+        let counter_per_us: u64 = timer_frequency / US_PER_SECOND;
 
         GameTime {
             tick_length_counter: (counter_per_us * tick_length_us),
@@ -18,12 +18,13 @@ impl GameTime {
             tick_second_ratio: (tick_length_us as f32) / (US_PER_SECOND as f32),
         }
     }
+
     pub fn update_ticks(&mut self, timer: u64) -> u64 {
         let time_passed_counter = self.partial_tick_counter + (timer - self.previous_timer);
         let ticks = time_passed_counter / self.tick_length_counter;
         self.partial_tick_counter = time_passed_counter % self.tick_length_counter;
         self.previous_timer = timer;
 
-        return ticks;
+        ticks
     }
 }

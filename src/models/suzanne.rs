@@ -47,9 +47,6 @@ impl Suzanne {
             })
             .collect();
 
-        dbg!(verticies[0]);
-        dbg!(verticies[1000]);
-
         let cube = Suzanne { verticies };
 
         cube

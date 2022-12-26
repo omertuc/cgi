@@ -18,8 +18,8 @@ rand = "0.8.3"
 image = "0.23.14"
 
 [dependencies.sdl2]
-version = "0.34.3"
-features = ["bundled", "static-link"]
+version = "0.35.2"
+# features = ["bundled", "static-link"]
 
 [features]
 gl_debug = ["gl/debug"]
