@@ -2,14 +2,14 @@ use std::f32::consts::TAU;
 
 use image::{GenericImageView, Pixel};
 use nalgebra::{Vector3, Vector4};
-use rand::Rng;
 use rand::rngs::ThreadRng;
+use rand::Rng;
 use sdl2::mouse::MouseWheelDirection;
 
 use controls::GameKey;
 use controls::KeyMap;
 
-use crate::game::controls::{GameKeyStack, init_key_map};
+use crate::game::controls::{init_key_map, GameKeyStack};
 use crate::game::gamecube::GameCube;
 use crate::game::gamelight::GameLight;
 use crate::models::cube::Cube;
@@ -17,8 +17,8 @@ use crate::models::suzanne::Suzanne;
 use crate::models::world_model::{Model, Spatial};
 use crate::primitives::camera::Camera;
 use crate::primitives::input::{KeyStack, MouseMovement};
-use crate::primitives::light::Color;
 use crate::primitives::light::consts::{BLUE, GREEN, RED, WHITE};
+use crate::primitives::light::Color;
 use crate::primitives::object_draw::ObjectsDraw;
 use crate::primitives::projection::perspective;
 use crate::primitives::spatial::{Location, Orientation};
@@ -33,7 +33,7 @@ mod gamecube;
 mod gamelight;
 
 const MOVEMENT_PER_SECOND: f32 = 10f32;
-const SPIN_PER_MOUSE_PIXEL: f32 = TAU / 300f32;
+const SPIN_PER_MOUSE_PIXEL: f32 = TAU / 2600f32;
 const ZOOM_PER_SCROLL_PIXEL: f32 = 0.1f32;
 const RUN_MULTIPLIER: f32 = 10f32;
 const WALK_MULTIPLIER: f32 = 0.1f32;
@@ -98,10 +98,15 @@ impl Game {
     }
 
     pub fn apply_camera_movement(&mut self, second_fraction: f32) {
-
-        let movement = self.move_per_second * self.camera.rotation_matrix() * Vector3::<f32>::new(0.0, 0.0, 1.0);
-        let strafe = self.strafe_per_second * self.camera.rotation_matrix() * Vector3::<f32>::new(1.0, 0.0, 0.0);
-        let fly = self.fly_per_second * self.camera.rotation_matrix() * Vector3::<f32>::new(0.0, 1.0, 0.0);
+        let movement = self.move_per_second
+            * self.camera.rotation_matrix()
+            * Vector3::<f32>::new(0.0, 0.0, 1.0);
+        let strafe = self.strafe_per_second
+            * self.camera.rotation_matrix()
+            * Vector3::<f32>::new(1.0, 0.0, 0.0);
+        let fly = self.fly_per_second
+            * self.camera.rotation_matrix()
+            * Vector3::<f32>::new(0.0, 1.0, 0.0);
 
         let combined = (movement + strafe + fly) * second_fraction;
 
@@ -189,7 +194,7 @@ impl Game {
                 ));
 
                 self.spotslights_draw.draw(
-                    &gl,
+                    gl,
                     model_scale,
                     &model_translation,
                     &model_rotation,
@@ -200,14 +205,14 @@ impl Game {
     }
 
     fn lerp(t: f32, a: Location, b: Location) -> Location {
-        return Location { 
+        Location {
             x: a.x * t + b.x * (1.0 - t),
             y: a.y * t + b.y * (1.0 - t),
             z: a.z * t + b.z * (1.0 - t),
         }
     }
 
-    fn cubic(t: f32, a: Location, b: Location, c: Location, d: Location) -> Location {
+    fn cubic_bezier(t: f32, a: Location, b: Location, c: Location, d: Location) -> Location {
         let e = Self::lerp(t, a, b);
         let f = Self::lerp(t, b, c);
         let g = Self::lerp(t, c, d);
@@ -264,30 +269,30 @@ impl Game {
     fn get_lights2(rng: &mut ThreadRng) -> Vec<GameLight> {
         let spot_radius = 15.0;
         let spin_speed = TAU / 100.0;
-        let z = 2.0;
 
         let mut game_lights = vec![];
 
         let step = 3;
         for i in (1..200).step_by(step) {
             let t = i as f32 / 200f32;
-            let location = Self::cubic(t,
-                Location { 
+            let location = Self::cubic_bezier(
+                t,
+                Location {
                     x: 0.0f32,
                     y: 0.0f32,
                     z: 0.0f32,
                 },
-                Location { 
+                Location {
                     x: 0.0f32,
                     y: 15.0f32,
                     z: 0.0f32,
                 },
-                Location { 
+                Location {
                     x: 20.0f32,
                     y: 0.0f32,
                     z: 0.0f32,
                 },
-                Location { 
+                Location {
                     x: 0.0f32,
                     y: 0.0f32,
                     z: 15.0f32,
@@ -457,12 +462,12 @@ impl Game {
     pub fn handle_keyboard_movement(&mut self, normalized: GameKeyStack) {
         let speed = MOVEMENT_PER_SECOND
             * if normalized.is_pressed(GameKey::Run) {
-            RUN_MULTIPLIER
-        } else if normalized.is_pressed(GameKey::Walk) {
-            WALK_MULTIPLIER
-        } else {
-            1f32
-        };
+                RUN_MULTIPLIER
+            } else if normalized.is_pressed(GameKey::Walk) {
+                WALK_MULTIPLIER
+            } else {
+                1f32
+            };
 
         if normalized.is_pressed(GameKey::Forward) {
             self.move_per_second = -speed;
@@ -511,12 +516,12 @@ impl Game {
             MouseWheelDirection::Unknown(..) => 0f32,
         }) * ZOOM_PER_SCROLL_PIXEL
             * if self.key_stack.normalize().is_pressed(GameKey::Run) {
-            RUN_MULTIPLIER
-        } else if self.key_stack.normalize().is_pressed(GameKey::Walk) {
-            WALK_MULTIPLIER
-        } else {
-            1f32
-        }
+                RUN_MULTIPLIER
+            } else if self.key_stack.normalize().is_pressed(GameKey::Walk) {
+                WALK_MULTIPLIER
+            } else {
+                1f32
+            }
     }
 
     pub fn input_handler(&mut self, event: sdl2::event::Event) {
