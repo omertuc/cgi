@@ -43,7 +43,7 @@ impl Triangle {
         let bvec: Vector3<f32> = verticies[1].pos.into();
         let cvec: Vector3<f32> = verticies[2].pos.into();
 
-        let normal = (bvec - avec).cross(&(cvec - &avec));
+        let normal = (bvec - avec).cross(&(cvec - avec));
 
         Triangle {
             a: VertexData::new(&verticies[0], normal),
@@ -52,6 +52,7 @@ impl Triangle {
         }
     }
 
+    #[allow(dead_code)]
     pub fn new_with_normals(verticies: [Vertex; 3], normal: Vector3<f32>) -> Triangle {
         Triangle {
             a: VertexData::new(&verticies[0], normal),
@@ -61,7 +62,7 @@ impl Triangle {
     }
 
     pub fn vertices(&self) -> Vec<VertexData> {
-        vec![self.a, self.b, self.c].into()
+        vec![self.a, self.b, self.c]
     }
 }
 

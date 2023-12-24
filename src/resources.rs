@@ -27,7 +27,7 @@ pub struct Resources {
 fn resource_name_to_path(root_dir: &Path, location: &str) -> PathBuf {
     let mut path: PathBuf = root_dir.into();
 
-    for part in location.split("/") {
+    for part in location.split('/') {
         path = path.join(part);
     }
 
@@ -55,7 +55,7 @@ impl Resources {
 
         file.read_to_end(&mut buffer)?;
 
-        if buffer.iter().find(|i| **i == 0).is_some() {
+        if buffer.iter().any(|i| *i == 0) {
             return Err(Error::FileContainsNil);
         }
 

@@ -12,12 +12,11 @@ use controls::KeyMap;
 use crate::game::controls::{init_key_map, GameKeyStack};
 use crate::game::gamecube::GameCube;
 use crate::game::gamelight::GameLight;
-use crate::models::cube::Cube;
 use crate::models::suzanne::Suzanne;
 use crate::models::world_model::{Model, Spatial};
 use crate::primitives::camera::Camera;
 use crate::primitives::input::{KeyStack, MouseMovement};
-use crate::primitives::light::consts::{BLUE, GREEN, RED, WHITE};
+use crate::primitives::light::consts::WHITE;
 use crate::primitives::light::Color;
 use crate::primitives::object_draw::ObjectsDraw;
 use crate::primitives::projection::perspective;
@@ -166,7 +165,7 @@ impl Game {
         self.gamecubes.iter().enumerate().for_each(|(i, cube)| {
             let (model_scale, model_translation, model_rotation) = cube.model();
             self.objects_draw.draw(
-                &gl,
+                gl,
                 model_scale,
                 &model_translation,
                 &model_rotation,
@@ -221,6 +220,7 @@ impl Game {
         Self::lerp(t, h, i)
     }
 
+    #[allow(dead_code)]
     fn get_lights(rng: &mut ThreadRng) -> Vec<GameLight> {
         let spot_radius = 15.0;
         let spin_speed = TAU / 100.0;
@@ -384,7 +384,7 @@ impl Game {
             .flat_map(|g| g.spotlight.cube.verticies.clone())
             .collect();
 
-        let spotlight_draw = SpotlightDraw::new(&res, &gl, spot_verticies)?;
+        let spotlight_draw = SpotlightDraw::new(&res, gl, spot_verticies)?;
 
         let mut game = Self {
             rng,
@@ -392,7 +392,7 @@ impl Game {
             ongoing: true,
 
             key_map: init_key_map(),
-            objects_draw: ObjectsDraw::new(&res, &gl, img_verticies)?,
+            objects_draw: ObjectsDraw::new(&res, gl, img_verticies)?,
             spotslights_draw: spotlight_draw,
             gamecubes: img_cubes,
             gamelights,
@@ -430,9 +430,10 @@ impl Game {
     }
 
     pub fn enable_vsync(&mut self) {
-        if let Ok(_) = self
+        if self
             .video_subsystem
             .gl_set_swap_interval(sdl2::video::SwapInterval::VSync)
+            .is_ok()
         {
             self.settings.vsync = true;
         } else {
@@ -441,9 +442,10 @@ impl Game {
     }
 
     pub fn disable_vsync(&mut self) {
-        if let Ok(_) = self
+        if self
             .video_subsystem
             .gl_set_swap_interval(sdl2::video::SwapInterval::Immediate)
+            .is_ok()
         {
             self.settings.vsync = false;
         } else {

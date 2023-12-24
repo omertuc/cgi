@@ -51,7 +51,7 @@ where
     /// This is used when keys which cancel each are pressed at the same time - we want to ignore
     /// all the keys that were pressed earlier, giving priority to those which were pressed later.
     pub fn normalize(&self) -> KeyStack<KeyType> {
-        if self.stack.len() == 0 {
+        if self.stack.is_empty() {
             return KeyStack::new();
         }
 

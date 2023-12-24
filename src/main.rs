@@ -94,7 +94,7 @@ fn run() -> Result<(), failure::Error> {
                 } => {
                     viewport.update_size(w, h);
                     viewport.set_used(&gl);
-                    game.set_aspect_ratio((w as f32 / h as f32) as f32);
+                    game.set_aspect_ratio(w as f32 / h as f32);
                 }
                 _ => {
                     game.input_handler(event);

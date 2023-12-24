@@ -21,11 +21,11 @@ impl Add<Location> for Location {
     type Output = Location;
 
     fn add(self, rhs: Location) -> Self::Output {
-        return Location {
+        Location {
             x: rhs.x + self.x,
             y: rhs.y + self.y,
             z: rhs.z + self.z,
-        };
+        }
     }
 }
 
@@ -33,11 +33,11 @@ impl Sub<f32> for Location {
     type Output = Location;
 
     fn sub(self, rhs: f32) -> Self::Output {
-        return Location {
+        Location {
             x: self.x - rhs,
             y: self.y - rhs,
             z: self.z - rhs,
-        };
+        }
     }
 }
 
@@ -86,9 +86,9 @@ impl From<(f32, f32, f32)> for Location {
     }
 }
 
-impl Into<Vector4<f32>> for Location {
-    fn into(self) -> Vector4<f32> {
-        Vector4::new(self.x, self.y, self.z, 1.0)
+impl From<Location> for Vector4<f32> {
+    fn from(val: Location) -> Self {
+        Vector4::new(val.x, val.y, val.z, 1.0)
     }
 }
 

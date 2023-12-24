@@ -40,6 +40,6 @@ impl Model for Spatial {
         ))
         .to_homogeneous();
 
-        return (self.scale, translation, rotation);
+        (self.scale, translation, rotation)
     }
 }

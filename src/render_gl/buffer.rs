@@ -63,7 +63,7 @@ where
         unsafe {
             self.gl.BufferData(
                 gl::ARRAY_BUFFER,
-                (data.len() * ::std::mem::size_of::<T>()) as gl::types::GLsizeiptr,
+                std::mem::size_of_val(data) as gl::types::GLsizeiptr,
                 data.as_ptr() as *const gl::types::GLvoid,
                 gl::STATIC_DRAW,
             );
@@ -77,7 +77,7 @@ where
 {
     fn drop(&mut self) {
         unsafe {
-            self.gl.DeleteBuffers(1, &mut self.vbo);
+            self.gl.DeleteBuffers(1, &self.vbo);
         }
     }
 }
@@ -117,7 +117,7 @@ impl VertexArray {
 impl Drop for VertexArray {
     fn drop(&mut self) {
         unsafe {
-            self.gl.DeleteVertexArrays(1, &mut self.vao);
+            self.gl.DeleteVertexArrays(1, &self.vao);
         }
     }
 }

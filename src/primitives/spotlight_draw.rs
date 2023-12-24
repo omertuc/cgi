@@ -41,12 +41,12 @@ impl SpotlightDraw {
     pub fn new(res: &Resources, gl: &gl::Gl, verticies: Vec<VertexData>) -> Result<Self, Error> {
         let program = Program::from_res(gl, res, "shaders/triangle_spotlight")?;
 
-        let vbo = ArrayBuffer::new(&gl);
-        let vao = VertexArray::new(&gl);
+        let vbo = ArrayBuffer::new(gl);
+        let vao = VertexArray::new(gl);
 
         vao.bind();
         vbo.bind();
-        VertexData::vertex_attrib_pointers(&gl);
+        VertexData::vertex_attrib_pointers(gl);
         vbo.unbind();
         vao.unbind();
 
@@ -106,14 +106,14 @@ impl SpotlightDraw {
     pub fn set_view(&self, view_translation: &Matrix4<f32>, view_rotation: &Matrix4<f32>) {
         self.program.set_used();
         self.program
-            .set_mat4_uniform(self.uniform_locs.view_translation, &view_translation);
+            .set_mat4_uniform(self.uniform_locs.view_translation, view_translation);
         self.program
-            .set_mat4_uniform(self.uniform_locs.view_rotation, &view_rotation);
+            .set_mat4_uniform(self.uniform_locs.view_rotation, view_rotation);
     }
 
     pub fn set_projection(&self, projection: &Matrix4<f32>) {
         self.program.set_used();
         self.program
-            .set_mat4_uniform(self.uniform_locs.projection, &projection);
+            .set_mat4_uniform(self.uniform_locs.projection, projection);
     }
 }

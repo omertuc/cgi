@@ -53,7 +53,7 @@ impl Shader {
     }
 
     fn from_source(gl: &gl::Gl, source: &CStr, kind: gl::types::GLuint) -> Result<Shader, String> {
-        let id = shader_from_source(&gl, source, kind)?;
+        let id = shader_from_source(gl, source, kind)?;
         Ok(Shader { gl: gl.clone(), id })
     }
 
@@ -164,7 +164,7 @@ impl Program {
             });
         }
 
-        return Ok(loc);
+        Ok(loc)
     }
 
     pub fn set_vec4_uniform(&self, loc: i32, vec: &Vector4<f32>) {
@@ -189,20 +189,20 @@ impl Program {
     pub fn set_vec4_array_uniform(&self, loc: i32, idx: usize, vec: &Vector4<f32>) {
         unsafe {
             self.gl
-                .Uniform4fv(loc + idx as i32, 1 as i32, vec.as_slice().as_ptr());
+                .Uniform4fv(loc + idx as i32, 1, vec.as_slice().as_ptr());
         }
     }
 
     pub fn set_vec3_array_uniform(&self, loc: i32, idx: usize, vec: &Vector3<f32>) {
         unsafe {
             self.gl
-                .Uniform3fv(loc + idx as i32, 1 as i32, vec.as_slice().as_ptr());
+                .Uniform3fv(loc + idx as i32, 1, vec.as_slice().as_ptr());
         }
     }
 
     pub fn set_float_array_uniform(&self, loc: i32, idx: usize, float: f32) {
         unsafe {
-            self.gl.Uniform1fv(loc + idx as i32, 1 as i32, &float);
+            self.gl.Uniform1fv(loc + idx as i32, 1, &float);
         }
     }
 

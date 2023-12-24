@@ -1,4 +1,3 @@
-use crate::models::cube::Cube;
 use crate::models::suzanne::Suzanne;
 use crate::models::world_model::{Model, Spatial};
 use nalgebra::Matrix4;

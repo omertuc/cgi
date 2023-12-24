@@ -1,6 +1,5 @@
 use nalgebra::Vector4;
 
-use crate::primitives::light::consts::WHITE;
 use crate::primitives::light::Color;
 use crate::primitives::spatial::Location;
 use crate::primitives::triangle::{Triangle, Vertex, VertexData};

@@ -27,7 +27,7 @@ impl Suzanne {
     pub(crate) fn new(color: Color) -> Self {
         let suzanne_cgi = include_bytes!("suzanne.cgi");
 
-        let color_vec = Vector4::new(color.r, color.g, color.b, color.a);
+        let _color_vec = Vector4::new(color.r, color.g, color.b, color.a);
 
         const VWN_SIZE: usize = std::mem::size_of::<VertexWithNormal>();
 
@@ -47,8 +47,6 @@ impl Suzanne {
             })
             .collect();
 
-        let cube = Suzanne { verticies };
-
-        cube
+        Suzanne { verticies }
     }
 }
