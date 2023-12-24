@@ -11,7 +11,7 @@ walkdir = "2.3.1"
 gl = { path = "lib/gl" }
 failure = "0.1.8"
 render_gl_derive = { path = "render_gl_derive"}
-vec-2-10-10-10 = "0.1.2"
+vec-2-10-10-10 = { git = "https://github.com/omertuc/vec-2-10-10-10-rs", branch = "fix" }
 nalgebra = "0.26.1"
 maplit = "1.0.2"
 rand = "0.8.3"
