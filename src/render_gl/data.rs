@@ -280,17 +280,7 @@ pub struct mat3_f32 {
 
 impl mat3_f32 {
     #[allow(clippy::too_many_arguments)]
-    pub fn new(
-        d00: f32,
-        d01: f32,
-        d02: f32,
-        d10: f32,
-        d11: f32,
-        d12: f32,
-        d20: f32,
-        d21: f32,
-        d22: f32,
-    ) -> mat3_f32 {
+    pub fn new(d00: f32, d01: f32, d02: f32, d10: f32, d11: f32, d12: f32, d20: f32, d21: f32, d22: f32) -> mat3_f32 {
         mat3_f32 {
             d00,
             d01,
@@ -321,8 +311,6 @@ impl mat3_f32 {
 
 impl From<(f32, f32, f32, f32, f32, f32, f32, f32, f32)> for mat3_f32 {
     fn from(other: (f32, f32, f32, f32, f32, f32, f32, f32, f32)) -> Self {
-        mat3_f32::new(
-            other.0, other.1, other.2, other.3, other.4, other.5, other.6, other.7, other.8,
-        )
+        mat3_f32::new(other.0, other.1, other.2, other.3, other.4, other.5, other.6, other.7, other.8)
     }
 }

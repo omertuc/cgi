@@ -12,10 +12,7 @@ fn main() {
     let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
     let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
 
-    print!(
-        "Running build script manifest dir {:?} out dir {:?}",
-        manifest_dir, out_dir
-    );
+    print!("Running build script manifest dir {:?} out dir {:?}", manifest_dir, out_dir);
 
     // locate executable path even if the project is in workspace
 
@@ -23,10 +20,7 @@ fn main() {
         .expect("failed to find target dir")
         .join(env::var("PROFILE").unwrap());
 
-    copy(
-        &manifest_dir.join("assets"),
-        &executable_path.join("assets"),
-    );
+    copy(&manifest_dir.join("assets"), &executable_path.join("assets"));
 }
 
 fn locate_target_dir_from_output_dir(mut target_dir_search: &Path) -> Option<&Path> {

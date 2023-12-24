@@ -79,8 +79,7 @@ pub(crate) struct Game {
 
 impl Game {
     pub(crate) fn process(&mut self, timer: u64) {
-        let second_fraction =
-            (self.game_time.update_ticks(timer) as f32) * self.game_time.tick_second_ratio;
+        let second_fraction = (self.game_time.update_ticks(timer) as f32) * self.game_time.tick_second_ratio;
 
         self.apply_camera_rotations(second_fraction);
         self.apply_camera_movement(second_fraction);
@@ -97,15 +96,9 @@ impl Game {
     }
 
     pub fn apply_camera_movement(&mut self, second_fraction: f32) {
-        let movement = self.move_per_second
-            * self.camera.rotation_matrix()
-            * Vector3::<f32>::new(0.0, 0.0, 1.0);
-        let strafe = self.strafe_per_second
-            * self.camera.rotation_matrix()
-            * Vector3::<f32>::new(1.0, 0.0, 0.0);
-        let fly = self.fly_per_second
-            * self.camera.rotation_matrix()
-            * Vector3::<f32>::new(0.0, 1.0, 0.0);
+        let movement = self.move_per_second * self.camera.rotation_matrix() * Vector3::<f32>::new(0.0, 0.0, 1.0);
+        let strafe = self.strafe_per_second * self.camera.rotation_matrix() * Vector3::<f32>::new(1.0, 0.0, 0.0);
+        let fly = self.fly_per_second * self.camera.rotation_matrix() * Vector3::<f32>::new(0.0, 1.0, 0.0);
 
         let combined = (movement + strafe + fly) * second_fraction;
 
@@ -151,56 +144,36 @@ impl Game {
     pub(crate) fn draw(&self, gl: &gl::Gl) {
         let (view_rotation, view_translation, view_location) = self.camera.view();
 
-        self.objects_draw
-            .set_view(&view_rotation, &view_translation, &view_location);
+        self.objects_draw.set_view(&view_rotation, &view_translation, &view_location);
 
-        self.objects_draw.set_spotlights(
-            self.gamelights
-                .iter()
-                .map(|gamelight| (&gamelight.spotlight, &gamelight.location)),
-        );
+        self.objects_draw
+            .set_spotlights(self.gamelights.iter().map(|gamelight| (&gamelight.spotlight, &gamelight.location)));
 
         let num_vertices = self.gamecubes[0].cube.verticies.len();
         self.objects_draw.prepare_for_draws();
         self.gamecubes.iter().enumerate().for_each(|(i, cube)| {
             let (model_scale, model_translation, model_rotation) = cube.model();
-            self.objects_draw.draw(
-                gl,
-                model_scale,
-                &model_translation,
-                &model_rotation,
-                num_vertices,
-                num_vertices * i,
-            );
+            self.objects_draw
+                .draw(gl, model_scale, &model_translation, &model_rotation, num_vertices, num_vertices * i);
         });
 
-        self.spotslights_draw
-            .set_view(&view_translation, &view_rotation);
+        self.spotslights_draw.set_view(&view_translation, &view_rotation);
 
         let num_vertices = self.gamelights[0].spotlight.cube.verticies.len();
         self.spotslights_draw.prepare_for_draws();
-        self.gamelights
-            .iter()
-            .enumerate()
-            .for_each(|(i, spotlight)| {
-                let (model_scale, model_translation, model_rotation) = spotlight.model();
+        self.gamelights.iter().enumerate().for_each(|(i, spotlight)| {
+            let (model_scale, model_translation, model_rotation) = spotlight.model();
 
-                self.spotslights_draw.set_solid_color(&Vector4::<f32>::new(
-                    spotlight.spotlight.color.r,
-                    spotlight.spotlight.color.g,
-                    spotlight.spotlight.color.b,
-                    spotlight.spotlight.color.a,
-                ));
+            self.spotslights_draw.set_solid_color(&Vector4::<f32>::new(
+                spotlight.spotlight.color.r,
+                spotlight.spotlight.color.g,
+                spotlight.spotlight.color.b,
+                spotlight.spotlight.color.a,
+            ));
 
-                self.spotslights_draw.draw(
-                    gl,
-                    model_scale,
-                    &model_translation,
-                    &model_rotation,
-                    num_vertices,
-                    num_vertices * i,
-                );
-            });
+            self.spotslights_draw
+                .draw(gl, model_scale, &model_translation, &model_rotation, num_vertices, num_vertices * i);
+        });
     }
 
     fn lerp(t: f32, a: Location, b: Location) -> Location {
@@ -371,18 +344,12 @@ impl Game {
         aspect: f32,
     ) -> Result<Game, failure::Error> {
         let img_cubes = Self::get_cubes();
-        let img_verticies: Vec<VertexData> = img_cubes
-            .iter()
-            .flat_map(|c| c.cube.verticies.clone())
-            .collect();
+        let img_verticies: Vec<VertexData> = img_cubes.iter().flat_map(|c| c.cube.verticies.clone()).collect();
 
         let mut rng = rand::thread_rng();
 
         let gamelights = Self::get_lights2(&mut rng);
-        let spot_verticies: Vec<VertexData> = gamelights
-            .iter()
-            .flat_map(|g| g.spotlight.cube.verticies.clone())
-            .collect();
+        let spot_verticies: Vec<VertexData> = gamelights.iter().flat_map(|g| g.spotlight.cube.verticies.clone()).collect();
 
         let spotlight_draw = SpotlightDraw::new(&res, gl, spot_verticies)?;
 
@@ -430,11 +397,7 @@ impl Game {
     }
 
     pub fn enable_vsync(&mut self) {
-        if self
-            .video_subsystem
-            .gl_set_swap_interval(sdl2::video::SwapInterval::VSync)
-            .is_ok()
-        {
+        if self.video_subsystem.gl_set_swap_interval(sdl2::video::SwapInterval::VSync).is_ok() {
             self.settings.vsync = true;
         } else {
             println!("Failed to enable vsync")
@@ -531,27 +494,21 @@ impl Game {
             sdl2::event::Event::MouseButtonDown { .. } => self.mouse_down = true,
             sdl2::event::Event::MouseButtonUp { .. } => self.mouse_down = false,
             sdl2::event::Event::MouseMotion { xrel, yrel, .. } => self.mouse_moved((xrel, yrel)),
-            sdl2::event::Event::MouseWheel {
-                direction, x, y, ..
-            } => self.mouse_scrolled(direction, x, y),
+            sdl2::event::Event::MouseWheel { direction, x, y, .. } => self.mouse_scrolled(direction, x, y),
             sdl2::event::Event::KeyDown {
                 scancode: Option::Some(code),
                 repeat,
                 ..
             } => {
                 if !repeat {
-                    self.key_stack = self
-                        .key_stack
-                        .press(*self.key_map.get(&code).unwrap_or(&GameKey::NoOp));
+                    self.key_stack = self.key_stack.press(*self.key_map.get(&code).unwrap_or(&GameKey::NoOp));
                 }
             }
             sdl2::event::Event::KeyUp {
                 scancode: Option::Some(code),
                 ..
             } => {
-                self.key_stack = self
-                    .key_stack
-                    .depress(*self.key_map.get(&code).unwrap_or(&GameKey::NoOp));
+                self.key_stack = self.key_stack.depress(*self.key_map.get(&code).unwrap_or(&GameKey::NoOp));
             }
             _ => {}
         };

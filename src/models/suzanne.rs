@@ -33,9 +33,7 @@ impl Suzanne {
 
         let verticies: Vec<VertexData> = suzanne_cgi
             .chunks(VWN_SIZE)
-            .map(|raw| unsafe {
-                transmute::<[u8; VWN_SIZE], VertexWithNormal>(raw.try_into().unwrap())
-            })
+            .map(|raw| unsafe { transmute::<[u8; VWN_SIZE], VertexWithNormal>(raw.try_into().unwrap()) })
             .map(|vwn| {
                 VertexData::new(
                     &Vertex {

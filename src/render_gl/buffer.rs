@@ -95,10 +95,7 @@ impl VertexArray {
             gl.GenVertexArrays(1, &mut vao);
         }
 
-        VertexArray {
-            gl: gl.clone(),
-            vao,
-        }
+        VertexArray { gl: gl.clone(), vao }
     }
 
     pub fn bind(&self) {

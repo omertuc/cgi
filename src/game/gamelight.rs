@@ -45,13 +45,7 @@ impl GameLight {
         self.location = Self::location_from_angle(self.center, self.angle, self.spin_radius);
     }
 
-    pub(crate) fn new(
-        angle: f32,
-        center: Location,
-        spin_radius: f32,
-        spin_speed: f32,
-        spotlight: Spotlight,
-    ) -> Self {
+    pub(crate) fn new(angle: f32, center: Location, spin_radius: f32, spin_speed: f32, spotlight: Spotlight) -> Self {
         Self {
             spotlight,
             angle,

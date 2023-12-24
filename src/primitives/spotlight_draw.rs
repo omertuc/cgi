@@ -84,12 +84,10 @@ impl SpotlightDraw {
         num_vertices: usize,
         offset: usize,
     ) {
-        self.program
-            .set_float_uniform(self.uniform_locs.model_scale, model_scale);
+        self.program.set_float_uniform(self.uniform_locs.model_scale, model_scale);
         self.program
             .set_mat4_uniform(self.uniform_locs.model_translation, model_translation);
-        self.program
-            .set_mat4_uniform(self.uniform_locs.model_rotation, model_rotation);
+        self.program.set_mat4_uniform(self.uniform_locs.model_rotation, model_rotation);
 
         unsafe {
             gl.DrawArrays(gl::TRIANGLES, offset as i32, num_vertices as i32);
@@ -99,21 +97,17 @@ impl SpotlightDraw {
     #[allow(dead_code)]
     pub fn set_solid_color(&self, color: &Vector4<f32>) {
         self.program.set_used();
-        self.program
-            .set_vec4_uniform(self.uniform_locs.solid_color, color);
+        self.program.set_vec4_uniform(self.uniform_locs.solid_color, color);
     }
 
     pub fn set_view(&self, view_translation: &Matrix4<f32>, view_rotation: &Matrix4<f32>) {
         self.program.set_used();
-        self.program
-            .set_mat4_uniform(self.uniform_locs.view_translation, view_translation);
-        self.program
-            .set_mat4_uniform(self.uniform_locs.view_rotation, view_rotation);
+        self.program.set_mat4_uniform(self.uniform_locs.view_translation, view_translation);
+        self.program.set_mat4_uniform(self.uniform_locs.view_rotation, view_rotation);
     }
 
     pub fn set_projection(&self, projection: &Matrix4<f32>) {
         self.program.set_used();
-        self.program
-            .set_mat4_uniform(self.uniform_locs.projection, projection);
+        self.program.set_mat4_uniform(self.uniform_locs.projection, projection);
     }
 }

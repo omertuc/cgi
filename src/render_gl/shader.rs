@@ -32,8 +32,7 @@ pub struct Shader {
 
 impl Shader {
     pub fn from_res(gl: &gl::Gl, res: &Resources, name: &str) -> Result<Shader, Error> {
-        const POSSIBLE_EXT: [(&str, gl::types::GLenum); 2] =
-            [(".vert", gl::VERTEX_SHADER), (".frag", gl::FRAGMENT_SHADER)];
+        const POSSIBLE_EXT: [(&str, gl::types::GLenum); 2] = [(".vert", gl::VERTEX_SHADER), (".frag", gl::FRAGMENT_SHADER)];
 
         let shader_kind = POSSIBLE_EXT
             .iter()
@@ -124,12 +123,7 @@ impl Program {
             let error = create_whitespace_cstring_with_len(len as usize);
 
             unsafe {
-                gl.GetProgramInfoLog(
-                    program_id,
-                    len,
-                    std::ptr::null_mut(),
-                    error.as_ptr() as *mut gl::types::GLchar,
-                );
+                gl.GetProgramInfoLog(program_id, len, std::ptr::null_mut(), error.as_ptr() as *mut gl::types::GLchar);
             }
 
             return Err(error.to_string_lossy().into_owned());
@@ -181,22 +175,19 @@ impl Program {
 
     pub fn set_mat4_uniform(&self, loc: i32, mat: &Matrix4<f32>) {
         unsafe {
-            self.gl
-                .UniformMatrix4fv(loc, 1, gl::FALSE, mat.as_slice().as_ptr());
+            self.gl.UniformMatrix4fv(loc, 1, gl::FALSE, mat.as_slice().as_ptr());
         }
     }
 
     pub fn set_vec4_array_uniform(&self, loc: i32, idx: usize, vec: &Vector4<f32>) {
         unsafe {
-            self.gl
-                .Uniform4fv(loc + idx as i32, 1, vec.as_slice().as_ptr());
+            self.gl.Uniform4fv(loc + idx as i32, 1, vec.as_slice().as_ptr());
         }
     }
 
     pub fn set_vec3_array_uniform(&self, loc: i32, idx: usize, vec: &Vector3<f32>) {
         unsafe {
-            self.gl
-                .Uniform3fv(loc + idx as i32, 1, vec.as_slice().as_ptr());
+            self.gl.Uniform3fv(loc + idx as i32, 1, vec.as_slice().as_ptr());
         }
     }
 
@@ -231,11 +222,7 @@ impl Drop for Program {
     }
 }
 
-fn shader_from_source(
-    gl: &gl::Gl,
-    source: &CStr,
-    kind: gl::types::GLuint,
-) -> Result<gl::types::GLuint, String> {
+fn shader_from_source(gl: &gl::Gl, source: &CStr, kind: gl::types::GLuint) -> Result<gl::types::GLuint, String> {
     let id = unsafe { gl.CreateShader(kind) };
 
     unsafe {
@@ -259,12 +246,7 @@ fn shader_from_source(
         let error = create_whitespace_cstring_with_len(len as usize);
 
         unsafe {
-            gl.GetShaderInfoLog(
-                id,
-                len,
-                std::ptr::null_mut(),
-                error.as_ptr() as *mut gl::types::GLchar,
-            );
+            gl.GetShaderInfoLog(id, len, std::ptr::null_mut(), error.as_ptr() as *mut gl::types::GLchar);
         }
 
         return Err(error.to_string_lossy().into_owned());

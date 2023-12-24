@@ -29,66 +29,18 @@ impl Cube {
         ];
 
         let colors = vec![
-            (
-                (0.9, 0.1, 0.3, alpha),
-                (0.9, 0.2, 0.4, alpha),
-                (0.9, 0.3, 0.5, alpha),
-            ),
-            (
-                (0.9, 0.1, 0.3, alpha),
-                (0.9, 0.2, 0.4, alpha),
-                (0.9, 0.3, 0.5, alpha),
-            ),
-            (
-                (0.1, 0.9, 0.3, alpha),
-                (0.2, 0.9, 0.4, alpha),
-                (0.3, 0.9, 0.5, alpha),
-            ),
-            (
-                (0.2, 0.9, 0.4, alpha),
-                (0.1, 0.9, 0.3, alpha),
-                (0.3, 0.9, 0.5, alpha),
-            ),
-            (
-                (0.1, 0.1, 0.9, alpha),
-                (0.2, 0.2, 0.9, alpha),
-                (0.3, 0.3, 0.9, alpha),
-            ),
-            (
-                (0.2, 0.2, 0.9, alpha),
-                (0.1, 0.1, 0.9, alpha),
-                (0.3, 0.3, 0.9, alpha),
-            ),
-            (
-                (0.9, 0.9, 0.3, alpha),
-                (0.9, 0.9, 0.4, alpha),
-                (0.9, 0.9, 0.5, alpha),
-            ),
-            (
-                (0.9, 0.9, 0.4, alpha),
-                (0.9, 0.9, 0.3, alpha),
-                (0.9, 0.9, 0.5, alpha),
-            ),
-            (
-                (0.2, 0.2, 0.4, alpha),
-                (0.1, 0.1, 0.3, alpha),
-                (0.3, 0.3, 0.5, alpha),
-            ),
-            (
-                (0.1, 0.1, 0.3, alpha),
-                (0.2, 0.2, 0.4, alpha),
-                (0.3, 0.3, 0.5, alpha),
-            ),
-            (
-                (0.2, 0.5, 0.9, alpha),
-                (0.1, 0.5, 0.9, alpha),
-                (0.3, 0.5, 0.9, alpha),
-            ),
-            (
-                (0.1, 0.5, 0.9, alpha),
-                (0.2, 0.5, 0.9, alpha),
-                (0.3, 0.5, 0.9, alpha),
-            ),
+            ((0.9, 0.1, 0.3, alpha), (0.9, 0.2, 0.4, alpha), (0.9, 0.3, 0.5, alpha)),
+            ((0.9, 0.1, 0.3, alpha), (0.9, 0.2, 0.4, alpha), (0.9, 0.3, 0.5, alpha)),
+            ((0.1, 0.9, 0.3, alpha), (0.2, 0.9, 0.4, alpha), (0.3, 0.9, 0.5, alpha)),
+            ((0.2, 0.9, 0.4, alpha), (0.1, 0.9, 0.3, alpha), (0.3, 0.9, 0.5, alpha)),
+            ((0.1, 0.1, 0.9, alpha), (0.2, 0.2, 0.9, alpha), (0.3, 0.3, 0.9, alpha)),
+            ((0.2, 0.2, 0.9, alpha), (0.1, 0.1, 0.9, alpha), (0.3, 0.3, 0.9, alpha)),
+            ((0.9, 0.9, 0.3, alpha), (0.9, 0.9, 0.4, alpha), (0.9, 0.9, 0.5, alpha)),
+            ((0.9, 0.9, 0.4, alpha), (0.9, 0.9, 0.3, alpha), (0.9, 0.9, 0.5, alpha)),
+            ((0.2, 0.2, 0.4, alpha), (0.1, 0.1, 0.3, alpha), (0.3, 0.3, 0.5, alpha)),
+            ((0.1, 0.1, 0.3, alpha), (0.2, 0.2, 0.4, alpha), (0.3, 0.3, 0.5, alpha)),
+            ((0.2, 0.5, 0.9, alpha), (0.1, 0.5, 0.9, alpha), (0.3, 0.5, 0.9, alpha)),
+            ((0.1, 0.5, 0.9, alpha), (0.2, 0.5, 0.9, alpha), (0.3, 0.5, 0.9, alpha)),
         ];
 
         let color_vec = Vector4::new(color.r, color.g, color.b, color.a);
@@ -97,20 +49,13 @@ impl Cube {
 
         let triangles: Vec<Triangle> = positions
             .iter()
-            .map(|triangle_verticies| {
-                triangle_verticies
-                    .iter()
-                    .map(|v| Location::from(*v) - offset)
-            })
+            .map(|triangle_verticies| triangle_verticies.iter().map(|v| Location::from(*v) - offset))
             .zip(colors)
             .map(|(p, _c)| {
                 Triangle::new(
                     p.map(|v| Vertex {
                         pos: v,
-                        clr: Vector4::<f32>::new(v.x, v.y, v.z, 1.0)
-                            .component_mul(&color_vec)
-                            .as_slice()
-                            .into(),
+                        clr: Vector4::<f32>::new(v.x, v.y, v.z, 1.0).component_mul(&color_vec).as_slice().into(),
                     })
                     .collect::<Vec<Vertex>>()
                     .try_into()

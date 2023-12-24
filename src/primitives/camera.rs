@@ -22,10 +22,8 @@ impl Camera {
 
     pub fn view_matrix(&self) -> Matrix4<f32> {
         Rotation3::from_axis_angle(&Vector3::y_axis(), -self.orientation.yaw).to_homogeneous()
-            * Rotation3::from_axis_angle(&Vector3::x_axis(), -self.orientation.pitch)
-                .to_homogeneous()
-            * Rotation3::from_axis_angle(&Vector3::z_axis(), -self.orientation.roll)
-                .to_homogeneous()
+            * Rotation3::from_axis_angle(&Vector3::x_axis(), -self.orientation.pitch).to_homogeneous()
+            * Rotation3::from_axis_angle(&Vector3::z_axis(), -self.orientation.roll).to_homogeneous()
     }
 
     pub fn rotation_matrix(&self) -> Matrix3<f32> {
@@ -35,19 +33,10 @@ impl Camera {
     }
 
     pub fn translation_matrix(&self) -> Matrix4<f32> {
-        Translation3::from(Vector3::new(
-            -self.location.x,
-            -self.location.y,
-            -self.location.z,
-        ))
-        .to_homogeneous()
+        Translation3::from(Vector3::new(-self.location.x, -self.location.y, -self.location.z)).to_homogeneous()
     }
 
     pub fn view(&self) -> (Matrix4<f32>, Matrix4<f32>, Vector3<f32>) {
-        (
-            self.view_matrix(),
-            self.translation_matrix(),
-            self.location.into(),
-        )
+        (self.view_matrix(), self.translation_matrix(), self.location.into())
     }
 }

@@ -31,11 +31,7 @@ impl Color {
     }
 
     pub fn random(rng: &mut ThreadRng) -> Self {
-        Color::new(
-            rng.gen_range(0.0..1.00),
-            rng.gen_range(0.0..1.00),
-            rng.gen_range(0.0..1.00),
-        )
+        Color::new(rng.gen_range(0.0..1.00), rng.gen_range(0.0..1.00), rng.gen_range(0.0..1.00))
     }
     pub const fn new_with_alpha(r: f32, g: f32, b: f32, a: f32) -> Self {
         Self { r, g, b, a }

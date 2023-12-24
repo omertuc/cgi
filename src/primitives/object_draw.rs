@@ -48,11 +48,7 @@ pub struct ObjectsDraw {
 }
 
 impl ObjectsDraw {
-    pub fn new(
-        res: &Resources,
-        gl: &gl::Gl,
-        verticies: Vec<VertexData>,
-    ) -> Result<ObjectsDraw, failure::Error> {
+    pub fn new(res: &Resources, gl: &gl::Gl, verticies: Vec<VertexData>) -> Result<ObjectsDraw, failure::Error> {
         let program = Program::from_res(gl, res, "shaders/triangle")?;
 
         let vbo = ArrayBuffer::new(gl);
@@ -97,22 +93,17 @@ impl ObjectsDraw {
         num_vertices: usize,
         offset: usize,
     ) {
-        self.program
-            .set_float_uniform(self.uniform_locs.model_scale, model_scale);
+        self.program.set_float_uniform(self.uniform_locs.model_scale, model_scale);
         self.program
             .set_mat4_uniform(self.uniform_locs.model_translation, model_translation);
-        self.program
-            .set_mat4_uniform(self.uniform_locs.model_rotation, model_rotation);
+        self.program.set_mat4_uniform(self.uniform_locs.model_rotation, model_rotation);
 
         unsafe {
             gl.DrawArrays(gl::TRIANGLES, offset as i32, num_vertices as i32);
         }
     }
 
-    pub(crate) fn set_spotlights<'a>(
-        &self,
-        lights: impl Iterator<Item = (&'a Spotlight, &'a Location)>,
-    ) {
+    pub(crate) fn set_spotlights<'a>(&self, lights: impl Iterator<Item = (&'a Spotlight, &'a Location)>) {
         self.program.set_used();
 
         let mut lights_count = 0;
@@ -127,36 +118,23 @@ impl ObjectsDraw {
                 i,
                 &Vector3::new(light.color.r, light.color.g, light.color.b),
             );
-            self.program.set_float_array_uniform(
-                self.uniform_locs.light_radiuses,
-                i,
-                light.spot_radius,
-            );
+            self.program
+                .set_float_array_uniform(self.uniform_locs.light_radiuses, i, light.spot_radius);
             lights_count += 1;
         });
 
-        self.program
-            .set_uint_uniform(self.uniform_locs.lights_count, lights_count);
+        self.program.set_uint_uniform(self.uniform_locs.lights_count, lights_count);
     }
 
-    pub fn set_view(
-        &self,
-        view_rotation: &Matrix4<f32>,
-        view_translation: &Matrix4<f32>,
-        view_location: &Vector3<f32>,
-    ) {
+    pub fn set_view(&self, view_rotation: &Matrix4<f32>, view_translation: &Matrix4<f32>, view_location: &Vector3<f32>) {
         self.program.set_used();
-        self.program
-            .set_mat4_uniform(self.uniform_locs.view_rotation, view_rotation);
-        self.program
-            .set_mat4_uniform(self.uniform_locs.view_translation, view_translation);
-        self.program
-            .set_vec3_uniform(self.uniform_locs.view_location, view_location);
+        self.program.set_mat4_uniform(self.uniform_locs.view_rotation, view_rotation);
+        self.program.set_mat4_uniform(self.uniform_locs.view_translation, view_translation);
+        self.program.set_vec3_uniform(self.uniform_locs.view_location, view_location);
     }
 
     pub fn set_projection(&self, projection: &Matrix4<f32>) {
         self.program.set_used();
-        self.program
-            .set_mat4_uniform(self.uniform_locs.projection, projection);
+        self.program.set_mat4_uniform(self.uniform_locs.projection, projection);
     }
 }

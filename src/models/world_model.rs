@@ -33,12 +33,7 @@ impl Model for Spatial {
         )
         .to_homogeneous();
 
-        let translation = Translation3::from(Vector3::new(
-            self.location.x,
-            self.location.y,
-            self.location.z,
-        ))
-        .to_homogeneous();
+        let translation = Translation3::from(Vector3::new(self.location.x, self.location.y, self.location.z)).to_homogeneous();
 
         (self.scale, translation, rotation)
     }
