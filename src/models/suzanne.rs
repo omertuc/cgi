@@ -27,8 +27,6 @@ impl Suzanne {
     pub(crate) fn new(color: Color) -> Self {
         let suzanne_cgi = include_bytes!("suzanne.cgi");
 
-        let _color_vec = Vector4::new(color.r, color.g, color.b, color.a);
-
         const VWN_SIZE: usize = std::mem::size_of::<VertexWithNormal>();
 
         let verticies: Vec<VertexData> = suzanne_cgi
@@ -38,7 +36,7 @@ impl Suzanne {
                 VertexData::new(
                     &Vertex {
                         pos: Location::new(vwn.vx as f32, vwn.vy as f32, vwn.vz as f32),
-                        clr: DARK_GRAY,
+                        clr: color
                     },
                     Vector3::new(vwn.nx as f32, vwn.ny as f32, vwn.nz as f32),
                 )

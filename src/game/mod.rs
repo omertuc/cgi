@@ -16,10 +16,11 @@ use crate::models::suzanne::Suzanne;
 use crate::models::world_model::{Model, Spatial};
 use crate::primitives::camera::Camera;
 use crate::primitives::input::{KeyStack, MouseMovement};
-use crate::primitives::light::consts::WHITE;
+use crate::primitives::light::consts::PINK;
+use crate::primitives::light::consts::{BLUE, RED, WHITE};
 use crate::primitives::light::Color;
 use crate::primitives::object_draw::ObjectsDraw;
-use crate::primitives::projection::perspective;
+use crate::primitives::projection::{perspective, orthographic};
 use crate::primitives::spatial::{Location, Orientation};
 use crate::primitives::spotlight::Spotlight;
 use crate::primitives::spotlight_draw::SpotlightDraw;
@@ -82,6 +83,7 @@ impl Game {
         let second_fraction = (self.game_time.update_ticks(timer) as f32) * self.game_time.tick_second_ratio;
 
         self.apply_camera_rotations(second_fraction);
+        self.move_per_second = -30f32;
         self.apply_camera_movement(second_fraction);
         self.camera = self.camera.normalize();
 
@@ -110,21 +112,21 @@ impl Game {
     fn wiggle_cubes(&mut self, second_fraction: f32) {
         let mut rng = self.rng.clone();
         let rotspeed = std::f32::consts::TAU * second_fraction * 0.03;
-        let movspeed = second_fraction * 0.1;
+        // let movspeed = second_fraction * 0.1;
         let scalespeed = second_fraction * 0.1;
 
         self.gamecubes.iter_mut().for_each(|gamecube| {
             gamecube.spatial.orientation = Orientation {
-                pitch: gamecube.spatial.orientation.pitch + rng.gen_range(0f32..rotspeed),
-                roll: gamecube.spatial.orientation.roll + rng.gen_range(0f32..rotspeed),
-                yaw: gamecube.spatial.orientation.yaw + rng.gen_range(0f32..rotspeed),
+                pitch: gamecube.spatial.orientation.pitch,
+                roll: gamecube.spatial.orientation.roll + rotspeed,
+                yaw: gamecube.spatial.orientation.yaw,
             };
             gamecube.spatial.location = Location {
-                x: gamecube.spatial.location.x + rng.gen_range(-movspeed..movspeed),
-                y: gamecube.spatial.location.y + rng.gen_range(-movspeed..movspeed),
-                z: gamecube.spatial.location.z + rng.gen_range(-movspeed..movspeed),
+                x: gamecube.spatial.location.x,
+                y: gamecube.spatial.location.y,
+                z: gamecube.spatial.location.z,
             };
-            gamecube.spatial.scale += rng.gen_range(-scalespeed..scalespeed);
+            gamecube.spatial.scale += 0.0;
         });
 
         self.rng = rng;
@@ -144,6 +146,17 @@ impl Game {
     pub(crate) fn draw(&self, gl: &gl::Gl) {
         let (view_rotation, view_translation, view_location) = self.camera.view();
 
+        self.draw_cubes(view_rotation, view_translation, view_location, gl);
+        self.draw_lights(view_translation, view_rotation, gl);
+    }
+
+    fn draw_cubes(
+        &self,
+        view_rotation: nalgebra::Matrix<f32, nalgebra::Const<4>, nalgebra::Const<4>, nalgebra::ArrayStorage<f32, 4, 4>>,
+        view_translation: nalgebra::Matrix<f32, nalgebra::Const<4>, nalgebra::Const<4>, nalgebra::ArrayStorage<f32, 4, 4>>,
+        view_location: nalgebra::Matrix<f32, nalgebra::Const<3>, nalgebra::Const<1>, nalgebra::ArrayStorage<f32, 3, 1>>,
+        gl: &gl::Gl,
+    ) {
         self.objects_draw.set_view(&view_rotation, &view_translation, &view_location);
 
         self.objects_draw
@@ -156,7 +169,14 @@ impl Game {
             self.objects_draw
                 .draw(gl, model_scale, &model_translation, &model_rotation, num_vertices, num_vertices * i);
         });
+    }
 
+    fn draw_lights(
+        &self,
+        view_translation: nalgebra::Matrix<f32, nalgebra::Const<4>, nalgebra::Const<4>, nalgebra::ArrayStorage<f32, 4, 4>>,
+        view_rotation: nalgebra::Matrix<f32, nalgebra::Const<4>, nalgebra::Const<4>, nalgebra::ArrayStorage<f32, 4, 4>>,
+        gl: &gl::Gl,
+    ) {
         self.spotslights_draw.set_view(&view_translation, &view_rotation);
 
         let num_vertices = self.gamelights[0].spotlight.cube.verticies.len();
@@ -195,7 +215,7 @@ impl Game {
 
     #[allow(dead_code)]
     fn get_lights(rng: &mut ThreadRng) -> Vec<GameLight> {
-        let spot_radius = 15.0;
+        let spot_radius = 1.0;
         let spin_speed = TAU / 100.0;
         let z = 2.0;
         let center = Location { x: 0.0, y: 0.0, z };
@@ -240,80 +260,57 @@ impl Game {
     }
 
     fn get_lights2(rng: &mut ThreadRng) -> Vec<GameLight> {
-        let spot_radius = 15.0;
-        let spin_speed = TAU / 100.0;
+        let spot_radius = 12.0;
+        let _spin_speed = TAU / 100.0;
 
         let mut game_lights = vec![];
 
-        let step = 3;
-        for i in (1..200).step_by(step) {
+        for i in (1..600).step_by(15) {
+            let t = i as f32 / 500f32;
+            let location = Location::new(0.0, 0.0, 0.0 + 100.0 * t);
+            let mut light = GameLight::new(0.0, location, 5.0, rng.gen_range(0.0..1.0), Spotlight::new(RED, spot_radius));
+            light.z_speed = 15.0;
+            game_lights.push(light);
+        }
+
+        for i in (10..200).step_by(15) {
             let t = i as f32 / 200f32;
-            let location = Self::cubic_bezier(
-                t,
-                Location {
-                    x: 0.0f32,
-                    y: 0.0f32,
-                    z: 0.0f32,
-                },
-                Location {
-                    x: 0.0f32,
-                    y: 15.0f32,
-                    z: 0.0f32,
-                },
-                Location {
-                    x: 20.0f32,
-                    y: 0.0f32,
-                    z: 0.0f32,
-                },
-                Location {
-                    x: 0.0f32,
-                    y: 0.0f32,
-                    z: 15.0f32,
-                },
-            );
-            game_lights.push(GameLight::new(
-                0.0,
-                location,
-                0.0,
-                spin_speed * i as f32 / step as f32,
-                Spotlight::new(Color::random(rng), spot_radius),
-            ));
+            let location = Location::new(0.0, 0.0, 0.0 + 100.0 * t);
+            let mut light = GameLight::new(0.0, location, 5.0, rng.gen_range(0.0..1.0), Spotlight::new(BLUE, spot_radius));
+            light.z_speed = 15.0;
+            game_lights.push(light);
         }
 
         game_lights
     }
 
-    fn get_cubes() -> Vec<GameCube> {
+    fn get_cubes(rng: &mut ThreadRng) -> Vec<GameCube> {
         let img = image::load_from_memory(include_bytes!("rs.png")).unwrap();
 
         let mut game_cubes = vec![];
 
         let (w, h) = img.dimensions();
 
-        let step = 50;
-        for i in (0..w).step_by(step) {
-            for j in (0..h).step_by(step) {
-                let spatial = Spatial::new(
-                    Location {
-                        x: 0f32 + (i as f32 / step as f32) * 3.3,
-                        y: 0f32 + (j as f32 / step as f32) * 3.3,
-                        z: 0.0,
-                    },
-                    Orientation::default(),
-                    5.0,
-                );
+        let w = 5000;
 
-                let color = Color {
-                    r: (img.get_pixel(i, h - j - 1).to_rgb()[0] as f32) / 255f32,
-                    g: (img.get_pixel(i, h - j - 1).to_rgb()[1] as f32) / 255f32,
-                    b: (img.get_pixel(i, h - j - 1).to_rgb()[2] as f32) / 255f32,
-                    a: 1.0,
-                };
+        for i in (0..w) {
+            let mut spatial = Spatial::new(
+                Location {
+                    z: 0f32 + (i as f32 / w as f32) * 2300.3,
+                    x: 0f32,
+                    y: 0.0,
+                },
+                Orientation::default(),
+                5.0,
+            );
 
-                let cube = Suzanne::new(color);
+            spatial.orientation.roll = (i as f32 / w as f32) * TAU / 0.02;
 
-                game_cubes.push(GameCube::new(spatial, cube));
-            }
+            let color = PINK;
+
+            let cube = Suzanne::new(color);
+
+            game_cubes.push(GameCube::new(spatial, cube));
         }
 
         game_cubes
@@ -321,15 +318,11 @@ impl Game {
 
     pub fn default_camera() -> Camera {
         Camera {
-            location: Location {
-                x: 130f32,
-                y: 0f32,
-                z: 130f32,
-            },
+            location: Location { x: 0f32, y: 0f32, z: 0f32 },
             orientation: Orientation {
-                pitch: TAU / 8.0,
+                pitch: 0f32,
                 roll: 0f32,
-                yaw: 0f32,
+                yaw: TAU / 2f32,
             },
         }
     }
@@ -343,10 +336,10 @@ impl Game {
         video_subsystem: sdl2::VideoSubsystem,
         aspect: f32,
     ) -> Result<Game, failure::Error> {
-        let img_cubes = Self::get_cubes();
-        let img_verticies: Vec<VertexData> = img_cubes.iter().flat_map(|c| c.cube.verticies.clone()).collect();
-
         let mut rng = rand::thread_rng();
+
+        let img_cubes = Self::get_cubes(&mut rng);
+        let img_verticies: Vec<VertexData> = img_cubes.iter().flat_map(|c| c.cube.verticies.clone()).collect();
 
         let gamelights = Self::get_lights2(&mut rng);
         let spot_verticies: Vec<VertexData> = gamelights.iter().flat_map(|g| g.spotlight.cube.verticies.clone()).collect();

@@ -19,7 +19,7 @@ uniform vec3[MAX_LIGHTS] light_colors;
 uniform float[MAX_LIGHTS] light_radiuses;
 
 // Ambient lighting
-float ambient_strength = 0.35;
+float ambient_strength = 0.1;
 vec3 ambient_color = ambient_strength * vec3(1.0, 1.0, 1.0);
 
 // Specular lighting

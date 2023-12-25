@@ -55,7 +55,7 @@ impl GameLight {
             x_speed: 0.0,
             y_speed: 0.0,
             location: Self::location_from_angle(center, angle, spin_radius),
-            z_speed: 0.00,
+            z_speed: 0.0,
         }
     }
 
